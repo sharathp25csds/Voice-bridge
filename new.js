@@ -339,7 +339,6 @@ speakBtn.addEventListener('click', () => {
 // PHASE 3 — LIVE CAPTION CALL
 // =========================================
 
-// --- ELEMENTS ---
 const callModal         = document.getElementById('callModal');
 const openCallModalBtn  = document.getElementById('openCallModal');
 const closeCallBtns     = [document.getElementById('closeCall'), document.getElementById('xCloseCall')];
@@ -381,6 +380,14 @@ const closeCallModal = () => {
     callModal.setAttribute('aria-hidden', 'true');
     callModal.style.display = 'none';
     endCall();
+
+    // FIX #3: Destroy peer on modal close to prevent stale state on reopen
+    if (peer && !peer.destroyed) {
+        peer.destroy();
+        peer = null;
+    }
+
+    myPeerIdEl.textContent = 'Generating...';
 };
 
 openCallModalBtn.addEventListener('click', openCallModal);
@@ -414,7 +421,7 @@ copyPeerIdBtn.addEventListener('click', () => {
 // =========================================
 
 const initPeer = () => {
-    // Don't re-init if already running
+    // FIX #3: Only skip re-init if peer is truly alive and not destroyed
     if (peer && !peer.destroyed) return;
 
     peer = new Peer();
@@ -459,8 +466,15 @@ const initPeer = () => {
 
 startCallBtn.addEventListener('click', () => {
     const remotePeerId = remotePeerIdInput.value.trim();
+
     if (!remotePeerId) {
         showToast('Please enter the other person\'s Peer ID!');
+        return;
+    }
+
+    // FIX #5: Guard against calling yourself
+    if (peer && remotePeerId === peer.id) {
+        showToast("You can't call yourself!");
         return;
     }
 
@@ -476,14 +490,30 @@ startCallBtn.addEventListener('click', () => {
         const conn = peer.connect(remotePeerId);
         dataChannel = conn;
 
+        // FIX #2: Register data listener BEFORE open fires to avoid race condition
+        conn.on('data', (data) => {
+            showThemCaption(data);
+        });
+
+        // FIX #2: Add timeout fallback in case 'open' is slow/unreliable
+        let connectedViaOpen = false;
+        const connectedFallbackTimer = setTimeout(() => {
+            if (!connectedViaOpen && callActive) {
+                setStatus('Connected — captions are live', 'connected');
+            }
+        }, 5000);
+
         conn.on('open', () => {
+            connectedViaOpen = true;
+            clearTimeout(connectedFallbackTimer);
             setStatus('Connected — captions are live', 'connected');
             callActive = true;
             startCaptioning();
         });
 
-        conn.on('data', (data) => {
-            showThemCaption(data);
+        conn.on('error', (err) => {
+            clearTimeout(connectedFallbackTimer);
+            setStatus('Data channel error: ' + err.type, 'error');
         });
 
         setStatus('Calling...', 'ready');
@@ -524,6 +554,12 @@ const startCaptioning = () => {
         return;
     }
 
+    // Avoid stacking multiple recognition instances
+    if (callRecognition) {
+        callRecognition.stop();
+        callRecognition = null;
+    }
+
     callRecognition = new SpeechRecognition();
     callRecognition.continuous = true;
     callRecognition.interimResults = true;
@@ -542,31 +578,42 @@ const startCaptioning = () => {
             }
         }
 
-        // Show your caption on screen
         if (final) {
-            youCaptionEl.innerHTML = final;
-            // Send final caption to other person via DataChannel
+            const existingInterim = youCaptionEl.querySelector('.caption-interim');
+            if (existingInterim) existingInterim.remove();
+
+            const line = document.createElement('p');
+            line.style.margin = '0 0 4px 0';
+            line.textContent = final;
+            youCaptionEl.appendChild(line);
+            youCaptionEl.scrollTop = youCaptionEl.scrollHeight;
+
             if (dataChannel && dataChannel.open) {
                 dataChannel.send(final);
             }
         } else if (interim) {
-            // Show interim in lighter style
-            youCaptionEl.innerHTML = `<span class="caption-interim">${interim}</span>`;
+            let interimEl = youCaptionEl.querySelector('.caption-interim');
+            if (!interimEl) {
+                interimEl = document.createElement('span');
+                interimEl.className = 'caption-interim';
+                youCaptionEl.appendChild(interimEl);
+            }
+            interimEl.textContent = interim;
+            youCaptionEl.scrollTop = youCaptionEl.scrollHeight;
         }
     };
 
-    // Auto-restart if recognition stops (Web Speech API quirk)
     callRecognition.onend = () => {
+        // Restart only if call is still active and mic is on
         if (callActive && micOn) {
             callRecognition.start();
         }
     };
 
     callRecognition.onerror = (event) => {
-        // Restart on non-fatal errors
         if (event.error !== 'no-speech' && callActive && micOn) {
             setTimeout(() => {
-                if (callActive) callRecognition.start();
+                if (callActive && micOn) callRecognition.start();
             }, 1000);
         }
     };
@@ -579,7 +626,11 @@ const startCaptioning = () => {
 // =========================================
 
 const showThemCaption = (text) => {
-    themCaptionEl.innerHTML = text;
+    const line = document.createElement('p');
+    line.style.margin = '0 0 4px 0';
+    line.textContent = text;
+    themCaptionEl.appendChild(line);
+    themCaptionEl.scrollTop = themCaptionEl.scrollHeight;
 };
 
 // =========================================
@@ -591,7 +642,6 @@ muteBtn.addEventListener('click', () => {
 
     isMuted = !isMuted;
 
-    // Mute/unmute the audio tracks
     localStream.getAudioTracks().forEach(track => {
         track.enabled = !isMuted;
     });
@@ -621,7 +671,10 @@ micToggleBtn.addEventListener('click', () => {
     } else {
         micToggleBtn.querySelector('span').textContent = 'Mic Off';
         micToggleBtn.classList.add('muted-active');
-        if (callRecognition) callRecognition.stop();
+        if (callRecognition) {
+            callRecognition.stop();
+            callRecognition = null;
+        }
     }
 });
 
@@ -670,7 +723,12 @@ const endCall = () => {
     // Reset UI
     youCaptionEl.innerHTML = '<span class="caption-placeholder">Your speech will appear here...</span>';
     themCaptionEl.innerHTML = '<span class="caption-placeholder">Their captions will appear here...</span>';
-    remotePeerIdInput.value = '';
+
+    // FIX #4: Only clear input if call was actually started (remotePeerIdInput has a value)
+    if (remotePeerIdInput.value.trim()) {
+        remotePeerIdInput.value = '';
+    }
+
     isMuted = false;
     micOn = true;
     muteBtn.classList.remove('muted-active');
@@ -686,8 +744,10 @@ const endCall = () => {
 // =========================================
 
 callLang.addEventListener('change', () => {
-    if (callActive && callRecognition) {
-        callRecognition.stop();
+    // FIX #1: Set lang BEFORE stopping so onend restart picks up the new language
+    if (callActive && callRecognition && micOn) {
         callRecognition.lang = callLang.value;
+        callRecognition.stop();
+        // onend handler will restart recognition automatically with the new lang
     }
 });

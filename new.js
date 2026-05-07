@@ -332,14 +332,12 @@ speakBtn.addEventListener('click', () => {
             toast.classList.remove('show');
         }, 3000);
     }
-});
 
+    // =========================================
+    // PHASE 3 — LIVE CAPTION CALL
+    // =========================================
 
-// =========================================
-// PHASE 3 — LIVE CAPTION CALL
-// =========================================
-
-const callModal         = document.getElementById('callModal');
+    const callModal         = document.getElementById('callModal');
 const openCallModalBtn  = document.getElementById('openCallModal');
 const closeCallBtns     = [document.getElementById('closeCall'), document.getElementById('xCloseCall')];
 const myPeerIdEl        = document.getElementById('myPeerId');
@@ -743,11 +741,12 @@ const endCall = () => {
 // LANGUAGE CHANGE DURING CALL
 // =========================================
 
-callLang.addEventListener('change', () => {
-    // FIX #1: Set lang BEFORE stopping so onend restart picks up the new language
-    if (callActive && callRecognition && micOn) {
-        callRecognition.lang = callLang.value;
-        callRecognition.stop();
-        // onend handler will restart recognition automatically with the new lang
-    }
+    callLang.addEventListener('change', () => {
+        // FIX #1: Set lang BEFORE stopping so onend restart picks up the new language
+        if (callActive && callRecognition && micOn) {
+            callRecognition.lang = callLang.value;
+            callRecognition.stop();
+            // onend handler will restart recognition automatically with the new lang
+        }
+    });
 });

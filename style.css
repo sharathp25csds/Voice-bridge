@@ -1136,6 +1136,8 @@ section {
   transform: scale(0.98);
 }
 
+
+/* ai assistance */
 /* Tool visibility */
 .tool-content[hidden] {
   display: none;
@@ -1148,10 +1150,11 @@ section {
 }
 
 .question-btn {
-    background: #6a6ba2;
-    color: white;
+    background: none;
+    color: rgb(0, 0, 0);
     border: none;
-    border-radius: 20px;
+    border-radius: 25px;
+    margin-left: 25px;
     padding: 10px 16px;
     cursor: pointer;
     text-align: left;
@@ -1160,7 +1163,7 @@ section {
 }
 
 .question-btn:hover {
-    background: #4f46e5;
+    background: #888a93;
 }
 
 

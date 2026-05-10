@@ -45,7 +45,17 @@ Users can report issues or send suggestions directly from the website.
 ✅ Bug reporting
 ✅ User support system
 
-📱 Responsive Design
+� Admin Portal
+
+Comprehensive admin dashboard for managing the platform.
+
+✅ User management
+✅ Activity monitoring
+✅ Database viewer
+✅ System statistics
+✅ Secure admin access
+
+�📱 Responsive Design
 
 Optimized for multiple devices.
 
@@ -92,6 +102,14 @@ Open:
 index.html
 
 in your browser 🌐
+
+4️⃣ Admin Portal Access
+
+To access the admin portal:
+
+1. Click "Admin Portal" button on the main page
+2. Login with admin credentials (see .env file)
+3. Access dashboard, user management, and database viewer
 
 🎯 Vision of VoiceBridge
 

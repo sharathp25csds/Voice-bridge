@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceBridge Admin Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ADMIN LOGIN MODAL -->
+  <div class="modal" id="adminLoginModal" aria-hidden="false" style="display: flex;">
+    <div class="modal-backdrop" id="closeAdminLogin"></div>
+    <div class="modal-card">
+      <button class="modal-close" id="xCloseAdminLogin" aria-label="Close">×</button>
+      <div class="modal-header">
+        <span class="header-icon">🔐</span>
+        <h3>Admin Login</h3>
+      </div>
+      <div class="field">
+        <label for="adminEmail">Email</label>
+        <input type="email" id="adminEmail" placeholder="admin@example.com" />
+      </div>
+      <div class="field">
+        <label for="adminPassword">Password</label>
+        <input type="password" id="adminPassword" placeholder="Enter password" />
+      </div>
+      <div id="adminError" class="error-message" style="display: none;"></div>
+      <button class="btn btn-hero w-full" id="adminLoginBtn">Login</button>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="adminDashboard" style="display: none;">
+    <div class="admin-navbar">
+      <div class="container nav-inner">
+        <a href="nagish.html" class="brand">
+          <span class="brand-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 11v2M22 12h0"/></svg>
+          </span>
+          VoiceBridge Admin
+        </a>
+        <div class="nav-actions">
+          <button class="btn btn-ghost" id="adminLogoutBtn">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <nav class="sidebar-nav">
+          <a href="#dashboard" class="sidebar-link active" data-section="dashboard">Dashboard</a>
+          <a href="#users" class="sidebar-link" data-section="users">Users</a>
+          <a href="#activity" class="sidebar-link" data-section="activity">Activity</a>
+          <a href="#transcripts" class="sidebar-link" data-section="transcripts">Transcripts</a>
+          <a href="#chats" class="sidebar-link" data-section="chats">Chats</a>
+          <a href="#reports" class="sidebar-link" data-section="reports">Reports</a>
+          <a href="#database" class="sidebar-link" data-section="database">Database Viewer</a>
+        </nav>
+      </aside>
+
+      <main class="admin-main">
+        <div id="dashboard-section" class="admin-section active">
+          <div class="admin-dashboard-hero">
+            <div class="dashboard-card">
+              <span class="admin-hero-tag">Admin overview</span>
+              <h2>Secure admin insights</h2>
+              <p class="admin-hero-description">Use this portal to review user activity, monitor live caption usage, and audit reports without changing any current behavior.</p>
+              <div class="admin-table-actions">
+                <button class="btn btn-ghost" data-section="users">View users</button>
+                <button class="btn btn-ghost" data-section="transcripts">View transcripts</button>
+                <button class="btn btn-ghost" data-section="database">Database viewer</button>
+              </div>
+            </div>
+            <div class="admin-action-grid">
+              <div class="admin-action-card">
+                <h4>Trusted access</h4>
+                <p>Admin login is secured with token validation and session checks.</p>
+              </div>
+              <div class="admin-action-card">
+                <h4>Quick stats</h4>
+                <p>Track your key metrics in one glance with fast updates.</p>
+              </div>
+              <div class="admin-action-card">
+                <h4>Audit ready</h4>
+                <p>Export any table to CSV for safe offline review.</p>
+              </div>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Total Users</h3>
+              <div class="stat-value" id="totalUsers">-</div>
+            </div>
+            <div class="stat-card">
+              <h3>Total Calls</h3>
+              <div class="stat-value" id="totalCalls">-</div>
+            </div>
+            <div class="stat-card">
+              <h3>Total Chats</h3>
+              <div class="stat-value" id="totalChats">-</div>
+            </div>
+            <div class="stat-card">
+              <h3>Total Reports</h3>
+              <div class="stat-value" id="totalReports">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="users-section" class="admin-section">
+          <h2>Users</h2>
+          <div class="section-toolbar admin-table-actions">
+            <input id="usersSearch" type="search" placeholder="Search users by name or email" />
+          </div>
+          <div class="data-table">
+            <table id="usersTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="activity-section" class="admin-section">
+          <h2>Activity</h2>
+          <p>Activity logs coming soon...</p>
+        </div>
+
+        <div id="transcripts-section" class="admin-section">
+          <h2>Transcripts</h2>
+          <div class="section-toolbar admin-table-actions">
+            <input id="transcriptsSearch" type="search" placeholder="Filter transcripts by user, peer ID, or text" />
+          </div>
+          <div class="data-table">
+            <table id="transcriptsTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Peer ID</th>
+                  <th>Duration</th>
+                  <th>Transcript</th>
+                  <th>Started</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="chats-section" class="admin-section">
+          <h2>Chats</h2>
+          <div class="data-table">
+            <table id="chatsTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Message</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="reports-section" class="admin-section">
+          <h2>Reports</h2>
+          <div class="data-table">
+            <table id="reportsTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Message</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="database-section" class="admin-section">
+          <h2>Database Viewer</h2>
+          <div class="db-controls">
+            <select id="tableSelect">
+              <option value="">Select Table</option>
+            </select>
+            <button class="btn btn-soft" id="loadTableBtn">Load Table</button>
+            <button class="btn btn-soft" id="exportCsvBtn">Export CSV</button>
+          </div>
+          <div class="data-table">
+            <table id="dbTable">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

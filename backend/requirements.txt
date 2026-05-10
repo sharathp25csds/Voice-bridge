@@ -1,0 +1,12 @@
+flask
+flask-cors
+flask-jwt-extended
+flask-bcrypt
+flask-sqlalchemy
+python-dotenv
+groq
+openai
+pydub
+numpy
+webrtcvad
+

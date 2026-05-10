@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceBridge — Breaking Communication Barriers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar" id="home">
+    <div class="container nav-inner">
+      <a href="#home" class="brand">
+        <span class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 11v2M22 12h0" />
+          </svg>
+        </span>
+        VoiceBridge
+      </a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#Home" id="navHomeBtn">Home</a>
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+        <a href="#userDashboard">Dashboard</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn btn-ghost" id="adminPortalBtn">Admin Portal</button>
+        <button class="btn btn-ghost" id="navAuthBtn" data-open-auth="login">Log in / Sign up</button>
+        <button class="btn btn-ghost" id="logoutBtn" style="display:none;color:red;">Logout</button>
+
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- HERO -->
+    <section class="hero" id="Home">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">Accessibility · Communication · AI</span>
+          <h1>Breaking <span class="text-gradient">Communication</span> Barriers</h1>
+          <p class="lead">
+            VoiceBridge empowers people with speech and hearing disabilities through real-time
+            speech-to-text, natural text-to-speech, and an AI guidance chatbot.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-hero btn-lg" data-open-auth="signup">STT & TTS →</button>
+            <button class="btn btn-hero btn-lg" id="openCallModal">Live Caption Call →</button>
+            <a href="#features" class="btn btn-soft btn-lg">Learn More</a>
+          </div>
+          <div class="hero-stats">
+            <div><strong>50k+</strong><span>Users helped</span></div>
+            <div><strong>99%</strong><span>Accuracy</span></div>
+            <div><strong>6+</strong><span>Languages</span></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card float">
+            <div class="hero-card-header">
+              <span class="dot live"></span> Live transcription
+            </div>
+            <p class="bubble">"Hello, how can I help you today?"</p>
+            <p class="bubble alt">"I'd like to learn more about VoiceBridge."</p>
+            <div class="wave">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- USER DASHBOARD -->
+    <section class="dashboard-panel user-dashboard" id="userDashboard">
+      <div class="container dashboard-grid">
+        <div class="dashboard-card dashboard-hero">
+          <span class="eyebrow">Welcome back</span>
+          <h2 class="dashboard-greeting">Hi there, ready to bridge another conversation?</h2>
+          <p>Access your tools quickly, resume your live caption sessions, and let Bridge help you communicate with
+            confidence.</p>
+          <div class="dashboard-actions">
+            <button class="btn btn-hero btn-lg" id="dashboardSuiteBtn">Start Communication Suite</button>
+            <!-- <button class="btn btn-soft btn-lg" id="dashboardCallBtn">Start Live Caption</button> -->
+          </div>
+        </div>
+        <div class="dashboard-card">
+          <div class="dashboard-metric">
+            <strong id="recentTranscriptCount">0</strong>
+            <span>Recent transcripts</span>
+          </div>
+          <div class="dashboard-metric">
+            <strong><span id="dashboardUserEmail">you@example.com</span></strong>
+            <span>Logged in as</span>
+          </div>
+          <div class="dashboard-metric">
+            <strong>Bridge AI</strong>
+            <span>Ready to guide you</span>
+          </div>
+          <div class="dashboard-metric">
+            <strong>Fast access</strong>
+            <span>One tap to your main tools</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features" id="features">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow center">What we offer</span>
+          <h2>Tools that <span class="text-gradient">truly listen</span></h2>
+          <p>Five thoughtfully designed features to help you communicate, your way.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+              </svg></div>
+            <h3>Speech-to-Text</h3>
+            <p>Real-time, accurate transcription that captures every word as you speak.</p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg></div>
+            <h3>Text-to-Speech</h3>
+            <p>Convert any text into natural-sounding voice in dozens of languages.</p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="2" />
+                <circle cx="12" cy="5" r="2" />
+                <path d="M12 7v4" />
+              </svg></div>
+            <h3>AI Chatbot</h3>
+            <p>A patient guide that explains features and answers questions 24/7.</p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg></div>
+            <h3>Report System</h3>
+            <p>Send feedback or report issues — we read every submission.</p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.22 2.18 2 2 0 012.22 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+              </svg></div>
+            <h3>Live Call Caption</h3>
+            <p>Instantly displays spoken words as on-screen text in real time.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHATBOT -->
+    <section class="chatbot-section" id="about">
+      <div class="container chat-grid">
+        <div>
+          <span class="eyebrow">AI Assistant</span>
+          <h2>Meet Bridge — your friendly guide</h2>
+          <p class="lead">Bridge answers your questions and helps you get the most from VoiceBridge. Available 24/7.</p>
+          <ul class="bullets">
+            <li><span class="dot accent"></span> Step-by-step onboarding</li>
+            <li><span class="dot accent"></span> Instant feature explanations</li>
+            <li><span class="dot accent"></span> Accessibility tips on demand</li>
+          </ul>
+        </div>
+        <div class="chat-window">
+          <div class="chat-header">
+            <div class="avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="10" rx="2" />
+                <circle cx="12" cy="5" r="2" />
+                <path d="M12 7v4" />
+              </svg>
+            </div>
+            <div>
+              <p class="name">Bridge Assistant</p>
+              <p class="status"><span class="dot accent"></span> Online</p>
+            </div>
+          </div>
+          <div class="chat-body" id="chatBody"></div>
+          <form class="chat-form" id="chatForm">
+            <input id="chatInput" type="text" placeholder="Type a message..." autocomplete="off" />
+            <button type="submit" class="btn-icon" aria-label="Send">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- CALL HISTORY -->
+    <section class="report-section history-section" id="history" style="display:none;">
+      <div class="container report-grid">
+        <div>
+          <span class="eyebrow">Call history</span>
+          <h2>Review your recent caption sessions</h2>
+          <p class="lead">Each saved session captures the other person, timestamps, duration, and full transcript
+            history.</p>
+          <div class="section-toolbar admin-table-actions">
+            <input id="historySearch" type="search" placeholder="Search call history by name, ID, or language" />
+            <div class="history-paging">
+              <button class="btn btn-soft" id="historyPrevBtn" type="button">Previous</button>
+              <button class="btn btn-soft" id="historyNextBtn" type="button">Next</button>
+            </div>
+          </div>
+        </div>
+        <div class="history-grid" id="historyList">
+          <div class="history-empty" id="historyEmpty">No call history yet. End a live caption call to save a session.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORT -->
+    <section class="report-section" id="contact">
+      <div class="container report-grid">
+        <div>
+          <span class="eyebrow">We're listening</span>
+          <h2>Report an issue or share feedback</h2>
+          <p class="lead">Your voice shapes VoiceBridge.</p>
+          <ul class="bullets">
+            <li><span class="dot accent"></span> Read by a real human within 24h</li>
+            <li><span class="dot accent"></span> Private and secure</li>
+            <li><span class="dot accent"></span> Helps us prioritize improvements</li>
+          </ul>
+        </div>
+        <form class="report-card" id="reportForm" novalidate>
+          <div class="field">
+            <label for="r-name">Your name</label>
+            <input id="r-name" name="name" type="text" placeholder="Sharath" maxlength="80" />
+          </div>
+          <div class="field">
+            <label for="r-type">Issue type</label>
+            <select id="r-type" name="type">
+              <option value="">Select an option</option>
+              <option>Bug report</option>
+              <option>Feature request</option>
+              <option>Accessibility concern</option>
+              <option>General feedback</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="r-message">Message</label>
+            <textarea id="r-message" name="message" rows="5" placeholder="Tell us what's on your mind..."
+              maxlength="1000"></textarea>
+          </div>
+          <button type="submit" class="btn btn-hero btn-lg w-full">Submit Report</button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div>
+        <a href="#home" class="brand light">
+          <span class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 11v2M22 12h0" />
+            </svg></span>
+          VoiceBridge
+        </a>
+        <p class="muted">Breaking communication barriers — one voice at a time.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#about">AI Assistant</a></li>
+          <li><a href="#contact">Report</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul class="muted">
+          <li>sharathp25csds@rnsit.ac.in</li>
+          <li>+91 7349-----62</li>
+          <li>VoiceBridge Solutions</li>
+        </ul>
+      </div>
+    </div>
+    <div class="container copyright">
+      <p>© <span id="year"></span> VoiceBridge. All rights reserved.</p>
+      <div><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Accessibility</a></div>
+    </div>
+  </footer>
+
+  <!-- AUTH MODAL -->
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="modal-backdrop" id="closeAuth"></div>
+    <div class="modal-card" style="max-width:420px;width:100%;padding:32px;">
+      <button class="modal-close" id="xCloseAuth" aria-label="Close">×</button>
+      <h3 id="authTitle" style="margin-bottom:24px;">Login to VoiceBridge</h3>
+      <div id="authError" style="color:red;margin-bottom:12px;font-size:14px;display:none;"></div>
+      <div id="nameField" class="field" style="display:none;">
+        <label for="authName">Your name</label>
+        <input id="authName" type="text" placeholder="Sharath" />
+      </div>
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" placeholder="you@email.com" />
+      </div>
+      <div class="field">
+        <label for="authPassword">Password</label>
+        <input id="authPassword" type="password" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-hero btn-lg w-full" id="authSubmitBtn">Login</button>
+      <p style="text-align:center;margin-top:16px;font-size:14px;">
+        <span id="authSwitchText">Don't have an account?</span>
+        <a href="#" id="authSwitchBtn" style="color:var(--accent);margin-left:6px;">Sign up</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- LIVE CAPTION CALL MODAL -->
+  <div class="modal" id="callModal" aria-hidden="true">
+    <div class="modal-backdrop" id="closeCall"></div>
+    <div class="modal-card call-modal-card">
+      <button class="modal-close" id="xCloseCall" aria-label="Close">×</button>
+      <div class="call-modal-header">
+        <div class="call-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path
+              d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.22 2.18 2 2 0 012.22 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="call-modal-title">Live Caption Call</h3>
+          <p class="call-modal-subtitle">Real-time captions for both speakers</p>
+        </div>
+      </div>
+      <div class="call-section">
+        <label class="call-label">Your Peer ID — share this with the other person</label>
+        <div class="peer-id-row">
+          <span class="peer-id-display" id="myPeerId">Generating...</span>
+          <button class="btn-copy" id="copyPeerIdBtn">Copy</button>
+        </div>
+      </div>
+      <div class="call-section">
+        <label class="call-label">Other person / Contact name</label>
+        <input type="text" id="contactNameInput" class="peer-input" placeholder="Enter a contact name" />
+      </div>
+      <div class="call-section">
+        <label class="call-label">Enter their Peer ID to call</label>
+        <div class="peer-input-row">
+          <input type="text" id="remotePeerIdInput" class="peer-input" placeholder="Paste their peer ID here..." />
+          <button class="btn btn-hero call-start-btn" id="startCallBtn">Call</button>
+        </div>
+      </div>
+      <div class="call-section">
+        <label class="call-label" for="callLang">Caption Language</label>
+        <select id="callLang" class="peer-input">
+          <option value="en-IN">🇮🇳 English (India)</option>
+          <option value="hi-IN">🇮🇳 Hindi</option>
+          <option value="kn-IN">🇮🇳 Kannada</option>
+          <option value="ta-IN">🇮🇳 Tamil</option>
+          <option value="te-IN">🇮🇳 Telugu</option>
+          <option value="ml-IN">🇮🇳 Malayalam</option>
+        </select>
+      </div>
+      <div class="call-status-bar" id="callStatusBar">
+        <span class="call-status-dot" id="callStatusDot"></span>
+        <span id="callStatusText">Ready — waiting for a call</span>
+      </div>
+      <div class="captions-area">
+        <div class="caption-box">
+          <div class="caption-box-header you"><span class="caption-dot you"></span> Speaker 1</div>
+          <div class="caption-text" id="youCaption"><span class="caption-placeholder">Speaker 1 captions appear
+              here...</span></div>
+        </div>
+        <div class="caption-box">
+          <div class="caption-box-header them"><span class="caption-dot them"></span> Speaker 2</div>
+          <div class="caption-text" id="themCaption"><span class="caption-placeholder">Speaker 2 captions appear
+              here...</span></div>
+        </div>
+      </div>
+      <div class="call-controls">
+        <button class="call-ctrl-btn" id="muteBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="20" height="20">
+            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+            <path d="M19 10v2a7 7 0 01-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+          <span>Mute</span>
+        </button>
+        <button class="call-ctrl-btn danger" id="hangUpBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="20" height="20">
+            <path
+              d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 012.22 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 9.91" />
+            <line x1="23" y1="1" x2="1" y2="23" />
+          </svg>
+          <span>Hang Up</span>
+        </button>
+        <button class="call-ctrl-btn" id="micToggleBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="20" height="20">
+            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+            <path d="M19 10v2a7 7 0 01-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+          <span>Mic On</span>
+        </button>
+        <button class="call-ctrl-btn" id="toggleCaptionThemeBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="20" height="20">
+            <circle cx="12" cy="12" r="5" />
+            <path
+              d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+          <span>Dark mode</span>
+        </button>
+      </div>
+      <audio id="remoteAudio" autoplay></audio>
+    </div>
+  </div>
+
+  <!-- HISTORY VIEWER MODAL -->
+  <div class="modal" id="historyModal" aria-hidden="true">
+    <div class="modal-backdrop" id="closeHistory"></div>
+    <div class="modal-card wide history-viewer-card">
+      <button class="modal-close" id="xCloseHistory" aria-label="Close">×</button>
+      <div class="modal-header">
+        <span class="header-icon">🗂️</span>
+        <div>
+          <h3 id="historyModalTitle">Session transcript</h3>
+          <p id="historyModalSubtitle">Full conversation history with timestamps</p>
+        </div>
+      </div>
+      <div class="section-toolbar admin-table-actions" style="margin-bottom:1rem;">
+        <button class="btn btn-soft" id="exportTranscriptBtn" type="button">Export as TXT</button>
+        <button class="btn btn-ghost" id="deleteHistoryBtn" type="button">Delete history</button>
+      </div>
+      <div class="history-meta-row">
+        <span class="badge" id="historyContactBadge"></span>
+        <span class="badge" id="historyDurationBadge"></span>
+        <span class="badge" id="historyLanguageBadge"></span>
+        <span class="badge" id="historyTimeBadge"></span>
+      </div>
+      <div class="conversation-view" id="conversationView"></div>
+    </div>
+  </div>
+
+  <!-- COMMUNICATION SUITE MODAL -->
+  <div class="modal" id="commModal" aria-hidden="true">
+    <div class="modal-backdrop" id="closeComm"></div>
+    <div class="modal-card wide">
+      <button class="modal-close" id="xClose" aria-label="Close">×</button>
+      <div class="modal-header">
+        <span class="header-icon">💬</span>
+        <h3>Communication Suite</h3>
+      </div>
+      <div style="display:flex;flex-direction:column;width:100%;">
+        <div style="height:1px;background-color:#e0e0e0;margin:0px;"></div>
+        <div class="tabs">
+          <button class="tab active" data-tab="stt"><span class="icon">🎙️</span> Speech-to-Text</button>
+          <button class="tab" data-tab="tts"><span class="icon">🔊</span> Text-to-Speech</button>
+        </div>
+        <div id="stttool" class="tool-content">
+          <div class="field">
+            <label><span class="pulse-dot"></span> Live Transcription</label>
+            <div id="sttOutput" class="display-box">
+              <div class="placeholder-text">Click the mic to start listening...</div>
+            </div>
+          </div>
+          <div class="lang-selector">
+            <label for="sttLang">🌐 Select Language</label>
+            <select id="sttLang">
+              <option value="en-IN">🇮🇳 English (India)</option>
+              <option value="hi-IN">🇮🇳 Hindi</option>
+              <option value="kn-IN">🇮🇳 Kannada</option>
+              <option value="ta-IN">🇮🇳 Tamil</option>
+              <option value="te-IN">🇮🇳 Telugu</option>
+              <option value="ml-IN">🇮🇳 Malayalam</option>
+            </select>
+          </div>
+          <button id="micBtn" class="btn btn-hero w-full">
+            <span class="btn-icon">🎤</span><span class="btn-text">Start Listening</span>
+          </button>
+        </div>
+        <div id="ttstool" class="tool-content" hidden>
+          <div class="field">
+            <label for="ttsInput"><span>✍️</span> Type what you want to say</label>
+            <textarea id="ttsInput" rows="4" placeholder="Hello, I would like to order..."></textarea>
+          </div>
+          <div class="lang-selector">
+            <label for="ttsLang">🌐 Select Language</label>
+            <select id="ttsLang">
+              <option value="en-IN">🇮🇳 English (India)</option>
+              <option value="hi-IN">🇮🇳 Hindi</option>
+              <option value="kn-IN">🇮🇳 Kannada</option>
+              <option value="ta-IN">🇮🇳 Tamil</option>
+              <option value="te-IN">🇮🇳 Telugu</option>
+              <option value="ml-IN">🇮🇳 Malayalam</option>
+            </select>
+          </div>
+          <div class="voice-toggle">
+            <label>🎙️ Voice Type</label>
+            <div class="toggle-btns">
+              <button class="toggle-btn active" id="femaleBtn">👩 Female</button>
+              <button class="toggle-btn" id="maleBtn">👨 Male</button>
+            </div>
+          </div>
+          <button id="speakBtn" class="btn btn-hero w-full">
+            <span class="btn-icon">📣</span><span class="btn-text">Speak Out Loud</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="new.js"></script>
+</body>
+
+</html>
+<!-- # 1. Prepare all changed files for the update
+git add .
+
+# 2. Save the changes with a descriptive note
+git commit -m "Added divider line and finalized Phase 3 call logic"
+
+# 3. Upload the changes to GitHub
+git push origin main 
+# 1. Stage the changes
+git add .
+
+# 2. Commit the changes (This 'creates' the branch history)
+git commit -m "Finalizing Phase 3"
+
+# 3. Rename the branch to main (to be sure)
+git branch -M main
+
+# 4. Push again
+git push -u origin main
+
+# 1. Force Git to see your changes
+git add .
+
+# 2. Save the changes (If this step fails, you have nothing to push!)
+git commit -m "Update Phase 3 UI"
+
+# 3. Force the branch name to 'main'
+git branch -M main
+
+# 4. Connect to your GitHub (Just in case the link was lost)
+# Replace <YOUR-GITHUB-URL> with your actual repo link (e.g., https://github.com/user/repo.git)
+git remote add origin <https://github.com/sharathp25csds/Voice-bridge>
+
+# 5. Push it
+git push -u origin main-->

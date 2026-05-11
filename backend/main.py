@@ -7,12 +7,15 @@ import os
 
 load_dotenv()
 
+# ── Groq client setup ──────────────────────────────────────────────────────────
 try:
-    import openai
-    openai.api_key = os.getenv('OPENAI_API_KEY', '')
+    from groq import Groq
+    groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 except ImportError:
-    openai = None
+    groq_client = None
+    print("⚠️  Groq SDK not installed. Run: pip install groq")
 
+# ── App blueprints ─────────────────────────────────────────────────────────────
 from models import db
 from routes.auth    import auth_bp, bcrypt
 from routes.chat    import chat_bp
@@ -20,6 +23,7 @@ from routes.calls   import calls_bp
 from routes.reports import reports_bp
 from routes.admin   import admin_bp
 
+# ── Flask app setup ────────────────────────────────────────────────────────────
 app = Flask(__name__)
 
 app.config['SECRET_KEY']                     = os.getenv('SECRET_KEY')
@@ -40,6 +44,7 @@ app.register_blueprint(reports_bp)
 app.register_blueprint(admin_bp)
 
 
+# ── Helpers ────────────────────────────────────────────────────────────────────
 def clean_transcript(text: str) -> str:
     result = text.strip().replace('\n', ' ').replace('  ', ' ').strip()
     result = result.replace(' ,', ',').replace(' .', '.').replace(' !', '!').replace(' ?', '?')
@@ -55,20 +60,22 @@ def clean_transcript(text: str) -> str:
     return result
 
 
+# ── Routes ─────────────────────────────────────────────────────────────────────
 @app.route('/api/transcribe', methods=['POST'])
 def transcribe_audio():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file uploaded'}), 400
 
+    if groq_client is None:
+        return jsonify({'error': 'Groq SDK not installed. Run: pip install groq'}), 500
+
+    groq_api_key = os.getenv('GROQ_API_KEY')
+    if not groq_api_key:
+        return jsonify({'error': 'GROQ_API_KEY not configured in .env'}), 500
+
     audio_file = request.files['audio']
-    language   = request.form.get('language', 'en-IN')
-    model      = os.getenv('OPENAI_TRANSCRIBE_MODEL', 'whisper-1')
-
-    if openai is None:
-        return jsonify({'error': 'OpenAI SDK not installed. Run pip install -r requirements.txt'}), 500
-
-    if not openai.api_key:
-        return jsonify({'error': 'OpenAI API key not configured'}), 500
+    language   = request.form.get('language', 'en')  # Groq supports 'en', not 'en-IN'
+    model      = os.getenv('GROQ_TRANSCRIBE_MODEL', 'whisper-large-v3')
 
     with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as out_file:
         audio_file.save(out_file.name)
@@ -76,32 +83,23 @@ def transcribe_audio():
 
     try:
         with open(temp_path, 'rb') as audio_stream:
-            if hasattr(openai.Audio, 'transcribe'):
-                transcript = openai.Audio.transcribe(
-                    file=audio_stream,
-                    model=model,
-                    language=language,
-                    temperature=0,
-                )
-            else:
-                transcript = openai.Audio.transcriptions.create(
-                    file=audio_stream,
-                    model=model,
-                    language=language,
-                    temperature=0,
-                )
+            transcript = groq_client.audio.transcriptions.create(
+                file=("audio.webm", audio_stream),
+                model=model,
+                language=language,
+                temperature=0,
+            )
 
-        if isinstance(transcript, dict):
-            text = transcript.get('text', '')
-        else:
-            text = getattr(transcript, 'text', '') or getattr(transcript, 'transcript', '')
+        text = transcript.text if hasattr(transcript, 'text') else ''
 
         if not text:
             return jsonify({'error': 'Empty transcription result'}), 500
 
         return jsonify({'transcript': clean_transcript(text)})
+
     except Exception as exc:
         return jsonify({'error': str(exc)}), 500
+
     finally:
         try:
             os.remove(temp_path)
@@ -111,9 +109,15 @@ def transcribe_audio():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'ok'}), 200
+    groq_configured = bool(os.getenv('GROQ_API_KEY'))
+    return jsonify({
+        'status': 'ok',
+        'groq_configured': groq_configured,
+        'groq_sdk': groq_client is not None,
+    }), 200
 
 
+# ── DB init & startup ──────────────────────────────────────────────────────────
 with app.app_context():
     db.create_all()
     print("✅ Database tables created!")

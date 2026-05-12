@@ -6,7 +6,7 @@
 // ==========================================
 // BACKEND CONNECTION
 // ==========================================
-const API = '/api';
+const API = window.location.origin + '/api';
 
 const getToken = () => localStorage.getItem('vb_token');
 const getUser  = () => JSON.parse(localStorage.getItem('vb_user') || '{}');

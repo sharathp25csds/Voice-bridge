@@ -50,9 +50,22 @@ class Report(db.Model):
     message    = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Check what your User model's tablename is:
+class User(db.Model):
+    __tablename__ = 'user'   # ← whatever this says
+    ...
+
+# Then match it in ChatHistory:
 class ChatHistory(db.Model):
-    id         = db.Column(db.Integer, primary_key=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    role       = db.Column(db.String(10), nullable=False)
-    message    = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __tablename__ = 'chat_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # ← must match exactly
+    role = db.Column(db.String(10), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    def __init__(self, user_id: int, role: str, message: str):
+        self.user_id = user_id
+        self.role = role
+        self.message = message

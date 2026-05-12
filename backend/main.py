@@ -13,7 +13,7 @@ try:
     groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 except ImportError:
     groq_client = None
-    print("⚠️  Groq SDK not installed. Run: pip install groq")
+    print("[WARNING] Groq SDK not installed. Run: pip install groq")
 
 # ── App blueprints ─────────────────────────────────────────────────────────────
 from models import db
@@ -120,8 +120,8 @@ def health_check():
 # ── DB init & startup ──────────────────────────────────────────────────────────
 with app.app_context():
     db.create_all()
-    print("✅ Database tables created!")
+    print("[OK] Database tables created!")
 
 if __name__ == '__main__':
-    print("🚀 VoiceBridge backend starting...")
+    print("[START] VoiceBridge backend starting...")
     app.run(debug=True, port=5000)

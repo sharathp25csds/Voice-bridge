@@ -152,7 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Logout ─────────────────────────────────────────────────────────────────
     adminLogoutBtn.addEventListener('click', () => {
         clearAdminToken();
-        window.location.href = 'nagish.html';
+        sessionStorage.clear();
+        localStorage.clear();
+        try {
+            window.location.href = 'index.html';
+        } catch (e) {
+            window.location.replace('index.html');
+        }
     });
 
     // ── Table Filter ───────────────────────────────────────────────────────────

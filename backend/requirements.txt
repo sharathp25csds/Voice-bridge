@@ -9,4 +9,4 @@ openai
 pydub
 numpy
 webrtcvad
-
+gunicorn

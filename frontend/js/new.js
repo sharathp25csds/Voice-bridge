@@ -6,7 +6,7 @@
 // ==========================================
 // BACKEND CONNECTION
 // ==========================================
-const API = window.location.origin + '/api';
+const API = 'https://voice-bridge-one.vercel.app/';
 
 const getToken = () => localStorage.getItem('vb_token');
 const getUser  = () => JSON.parse(localStorage.getItem('vb_user') || '{}');

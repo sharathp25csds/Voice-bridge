@@ -84,12 +84,6 @@
             </span>
             <span class="sidebar-label">Users</span>
           </a>
-          <a href="#activity" class="sidebar-link" data-section="activity">
-            <span class="sidebar-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            </span>
-            <span class="sidebar-label">Activity</span>
-          </a>
           <a href="#transcripts" class="sidebar-link" data-section="transcripts">
             <span class="sidebar-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -107,12 +101,6 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </span>
             <span class="sidebar-label">Reports</span>
-          </a>
-          <a href="#database" class="sidebar-link" data-section="database">
-            <span class="sidebar-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            </span>
-            <span class="sidebar-label">Database</span>
           </a>
         </nav>
       </aside>
@@ -135,10 +123,6 @@
                 <button class="btn btn-soft" data-section="transcripts">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   View transcripts
-                </button>
-                <button class="btn btn-soft" data-section="database">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-                  Database viewer
                 </button>
               </div>
             </div>
@@ -230,10 +214,10 @@
               <table id="usersTable">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Joined</th>
+                    <th>User Name</th>
+                    <th>User Email</th>
+                    <th>Joined Date</th>
+                    <th>Joined Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -245,21 +229,6 @@
                   </td></tr>
                 </tbody>
               </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════ ACTIVITY SECTION ══════════ -->
-        <div id="activity-section" class="admin-section">
-          <div class="section-header">
-            <h2>Activity</h2>
-            <p class="section-subtitle">Monitor system activity and logs</p>
-          </div>
-          <div class="empty-state-box">
-            <div class="empty-state-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              <h3>Activity Logs</h3>
-              <p>Activity tracking is coming soon. Stay tuned for detailed usage analytics.</p>
             </div>
           </div>
         </div>
@@ -279,16 +248,17 @@
               <table id="transcriptsTable">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>User</th>
-                    <th>Peer ID</th>
-                    <th>Duration</th>
-                    <th>Transcript</th>
-                    <th>Started</th>
+                    <th>User ID</th>
+                    <th>User Name</th>
+                    <th>Session Duration</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Feature Used</th>
+                    <th>Transcript Date</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="empty-state"><td colspan="6">
+                  <tr class="empty-state"><td colspan="7">
                     <div class="empty-state-inline">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                       <span>No transcripts found</span>
@@ -348,47 +318,32 @@
               <option value="Verified">✓ Verified</option>
               <option value="Resolved">✓✓ Resolved</option>
             </select>
+            <button class="btn btn-hero" id="refreshReportsBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Refresh
+            </button>
             <span class="result-count" id="reportsCount"></span>
-          </div>
-          <div id="reportsContainer" class="reports-container">
-            <div class="empty-state-box">
-              <div class="empty-state-content">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <h3>No Reports Yet</h3>
-                <p>User reports will appear here once submitted.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══════════ DATABASE SECTION ══════════ -->
-        <div id="database-section" class="admin-section">
-          <div class="section-header">
-            <h2>Database Viewer</h2>
-            <p class="section-subtitle">Advanced database inspection and CSV export</p>
-          </div>
-          <div class="db-controls">
-            <select id="tableSelect" class="filter-select">
-              <option value="">Select Table</option>
-            </select>
-            <button class="btn btn-hero" id="loadTableBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-              Load Table
-            </button>
-            <button class="btn btn-soft" id="exportCsvBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export CSV
-            </button>
           </div>
           <div class="data-table-wrapper">
             <div class="data-table">
-              <table id="dbTable">
-                <thead></thead>
-                <tbody>
-                  <tr class="empty-state"><td colspan="1">
+              <table id="reportsTable">
+                <thead>
+                  <tr>
+                    <th>Report ID</th>
+                    <th>User Name</th>
+                    <th>User Email</th>
+                    <th>Report Title</th>
+                    <th>Report Description</th>
+                    <th>Submitted Date & Time</th>
+                    <th>Report Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="reportsTableBody">
+                  <tr class="empty-state"><td colspan="8">
                     <div class="empty-state-inline">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-                      <span>Select a table and click Load</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      <span>No reports found</span>
                     </div>
                   </td></tr>
                 </tbody>

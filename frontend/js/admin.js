@@ -52,6 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const transcriptsSearch = document.getElementById('transcriptsSearch');
     const chatsSearch = document.getElementById('chatsSearch');
 
+    // HTML escape helper
+    const escapeHtml = (str) => {
+        if (str === null || str === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    };
+
     const closeLoginBtns = [document.getElementById('closeAdminLogin'), document.getElementById('xCloseAdminLogin')];
 
     // ── Auth Flow ──────────────────────────────────────────────────────────────
@@ -212,24 +220,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Load Dashboard Stats ───────────────────────────────────────────────────
     const loadDashboardData = async () => {
         try {
+            console.log('Fetching dashboard stats...');
             const res = await fetch(`${API}/api/admin/stats`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
-            const data = await res.json();
-
+            
             if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                console.error('Dashboard Stats Error:', res.status, errorData);
                 if (res.status === 401 || res.status === 403) {
                     clearAdminToken();
                     showLogin();
                 }
+                showToast(`Failed to load stats: ${errorData.error || res.statusText}`, 'error');
                 return;
             }
 
-            // Animate stat values
+            const data = await res.json();
+            console.log('Dashboard stats received:', data);
+
             const animateStat = (id, value) => {
                 const el = document.getElementById(id);
                 if (!el) return;
-                el.textContent = value ?? 0;
+                el.textContent = (value !== undefined && value !== null) ? value : 0;
             };
 
             animateStat('totalUsers', data.total_users);
@@ -238,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
             animateStat('totalReports', data.total_reports);
         } catch (err) {
             console.error('Failed to load dashboard data', err);
-            showToast('Failed to load dashboard stats', 'error');
+            showToast('Cannot connect to server for dashboard stats', 'error');
         }
     };
 
@@ -250,25 +263,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            console.log(`Fetching ${endpoint} data...`);
             const res = await fetch(`${API}/api/admin/${endpoint}`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
-            const data = await res.json();
+            
+            const data = await res.json().catch(() => null);
 
             if (res.ok) {
+                if (!tbody) return;
                 tbody.innerHTML = '';
 
                 if (!Array.isArray(data) || data.length === 0) {
-                    tbody.innerHTML = '<tr class="empty-state"><td colspan="99"><div class="empty-state-inline"><span>No data found</span></div></td></tr>';
+                    tbody.innerHTML = '<tr class="empty-state"><td colspan="99"><div class="empty-state-inline"><span>No Data Available</span></div></td></tr>';
                 } else {
                     data.forEach(row => {
+                        if (!row) return;
                         const tr = document.createElement('tr');
-                        Object.values(row).forEach(value => {
-                            const td = document.createElement('td');
-                            td.textContent = value ?? '—';
-                            td.title = String(value ?? '');
-                            tr.appendChild(td);
-                        });
+                        
+                        if (tableId === 'usersTable') {
+                            const dateObj = row.created_at ? new Date(row.created_at) : null;
+                            tr.innerHTML = `
+                                <td>${escapeHtml(row.name)}</td>
+                                <td>${escapeHtml(row.email)}</td>
+                                <td>${dateObj ? dateObj.toLocaleDateString() : '—'}</td>
+                                <td>${dateObj ? dateObj.toLocaleTimeString() : '—'}</td>
+                            `;
+                        } else if (tableId === 'transcriptsTable') {
+                            tr.innerHTML = `
+                                <td>${row.user_id || '—'}</td>
+                                <td>${escapeHtml(row.user_name || 'Unknown')}</td>
+                                <td>${row.duration || 0}s</td>
+                                <td>${row.started_at ? new Date(row.started_at).toLocaleTimeString() : '—'}</td>
+                                <td>${row.ended_at ? new Date(row.ended_at).toLocaleTimeString() : '—'}</td>
+                                <td>${escapeHtml(row.feature_used || '—')}</td>
+                                <td>${row.date || '—'}</td>
+                            `;
+                        } else {
+                            Object.values(row).forEach(value => {
+                                const td = document.createElement('td');
+                                td.textContent = (value !== undefined && value !== null) ? value : '—';
+                                td.title = String(value ?? '');
+                                tr.appendChild(td);
+                            });
+                        }
                         tbody.appendChild(tr);
                     });
                 }
@@ -278,13 +316,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tableId === 'transcriptsTable') filterTable(transcriptsSearch, 'transcriptsTable', 'transcriptsCount');
                 if (tableId === 'chatsTable') filterTable(chatsSearch, 'chatsTable', 'chatsCount');
             } else {
-                showToast('Failed to load data', 'error');
+                console.error(`API Error for ${endpoint}:`, res.status, data);
+                if (res.status === 401 || res.status === 403) {
+                    clearAdminToken();
+                    showLogin();
+                    return;
+                }
+                showToast(`Failed to load ${endpoint} data: ${data?.error || res.statusText}`, 'error');
+                if (tbody) tbody.innerHTML = `<tr class="empty-state"><td colspan="99"><div class="empty-state-inline"><span>Failed to load ${endpoint}: ${data?.error || 'Server Error'}</span></div></td></tr>`;
             }
         } catch (err) {
-            console.error(`Failed to load ${tableId}`, err);
-            showToast('Failed to load data — check server connection', 'error');
+            console.error(`Fetch Exception for ${endpoint}:`, err);
+            showToast('Network error while loading data', 'error');
             if (tbody) {
-                tbody.innerHTML = '<tr class="empty-state"><td colspan="99"><div class="empty-state-inline"><span>Failed to load data</span></div></td></tr>';
+                tbody.innerHTML = '<tr class="empty-state"><td colspan="99"><div class="empty-state-inline"><span>Check server connection</span></div></td></tr>';
             }
         }
     };
@@ -342,103 +387,137 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     };
 
-    // HTML escape helper
-    const escapeHtml = (str) => {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    };
 
     // ── Load Reports ───────────────────────────────────────────────────────────
     const loadReports = async () => {
-        const container = document.getElementById('reportsContainer');
-        if (!container) return;
+        const tbody = document.getElementById('reportsTableBody');
+        if (!tbody) return;
 
         // Show loading
-        container.innerHTML = `<div class="empty-state-box"><div class="empty-state-content"><span class="stat-loader"></span><p style="margin-top:1rem;">Loading reports...</p></div></div>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state-inline"><span class="stat-loader"></span><span>Loading reports...</span></div></td></tr>`;
 
         try {
+            console.log('Fetching reports...');
             const res = await fetch(`${API}/api/admin/reports`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
-            const data = await res.json();
+            
+            const data = await res.json().catch(() => null);
 
-            container.innerHTML = '';
+            if (res.ok) {
+                tbody.innerHTML = '';
 
-            if (!Array.isArray(data) || data.length === 0) {
-                container.innerHTML = `<div class="empty-state-box"><div class="empty-state-content">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <h3>No Reports Yet</h3><p>User reports will appear here once submitted.</p></div></div>`;
-                updateResultCount('reportsCount', 0);
-                return;
+                if (!Array.isArray(data) || data.length === 0) {
+                    tbody.innerHTML = `<tr class="empty-state"><td colspan="8"><div class="empty-state-inline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>No Data Available</span></div></td></tr>`;
+                    updateResultCount('reportsCount', 0);
+                    return;
+                }
+
+                updateResultCount('reportsCount', data.length);
+
+                data.forEach(report => {
+                    if (!report) return;
+                    const tr = document.createElement('tr');
+                    tr.dataset.reportId = report.id;
+                    tr.dataset.status = report.status || 'Pending';
+                    
+                    const statusClass = (report.status || 'Pending').toLowerCase();
+                    const dateStr = report.created_at ? new Date(report.created_at).toLocaleString() : '—';
+
+                    tr.innerHTML = `
+                        <td>#${report.id}</td>
+                        <td>${escapeHtml(report.name || 'Anonymous')}</td>
+                        <td>${escapeHtml(report.email || '—')}</td>
+                        <td><span class="report-type-tag">${escapeHtml(report.type || 'General')}</span></td>
+                        <td><div class="report-desc-cell">${escapeHtml(report.message || '')}</div></td>
+                        <td>${dateStr}</td>
+                        <td>
+                            <span class="status-badge ${statusClass}">
+                                <span class="status-dot"></span>
+                                ${report.status || 'Pending'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="report-actions-cell">
+                                <button class="action-btn-sm verify-btn" title="Verify" ${report.status === 'Verified' || report.status === 'Resolved' ? 'disabled' : ''}>✓</button>
+                                <button class="action-btn-sm resolve-btn" title="Resolve" ${report.status === 'Resolved' ? 'disabled' : ''}>✓✓</button>
+                                <button class="action-btn-sm delete-btn" title="Delete">✕</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    // Add event listeners for actions
+                    tr.querySelector('.verify-btn').addEventListener('click', () => handleReportAction(report.id, 'Verified'));
+                    tr.querySelector('.resolve-btn').addEventListener('click', () => handleReportAction(report.id, 'Resolved'));
+                    tr.querySelector('.delete-btn').addEventListener('click', () => handleDeleteReport(report.id));
+                });
+                
+                // Apply status filter if any
+                if (reportStatusFilter) handleReportFilter(reportStatusFilter.value);
+            } else {
+                console.error('Reports API Error:', res.status, data);
+                if (res.status === 401 || res.status === 403) {
+                    clearAdminToken();
+                    showLogin();
+                    return;
+                }
+                showToast(`Failed to load reports: ${data?.error || res.statusText}`, 'error');
+                tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state-inline"><span>Failed to load reports: ${data?.error || 'Server Error'}</span></div></td></tr>`;
             }
-
-            updateResultCount('reportsCount', data.length);
-
-            data.forEach(report => {
-                // Initialize UI status
-                report._uiStatus = 'Pending';
-                const card = displayReportCard(report);
-                container.appendChild(card);
-
-                // Verify button
-                card.querySelector('.verify-btn').addEventListener('click', (e) => {
-                    handleReportAction(report.id, 'Verified', 'Report verified!', card, e.currentTarget);
-                });
-
-                // Resolve button
-                card.querySelector('.resolve-btn').addEventListener('click', (e) => {
-                    handleReportAction(report.id, 'Resolved', 'Report marked as resolved!', card, e.currentTarget);
-                });
-            });
         } catch (err) {
             console.error('Failed to load reports', err);
             showToast('Failed to load reports', 'error');
-            container.innerHTML = `<div class="empty-state-box"><div class="empty-state-content">
-                <h3>Failed to Load</h3><p>Could not connect to the server. Please try again.</p></div></div>`;
+            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state-inline"><span>Failed to load reports — check connection</span></div></td></tr>`;
         }
     };
 
-    // ── Handle Report Status Updates (UI only) ─────────────────────────────────
-    const handleReportAction = (reportId, newStatus, successMessage, cardElement, btnElement) => {
+    // ── Handle Report Status Updates ───────────────────────────────────────────
+    const handleReportAction = async (reportId, newStatus) => {
         try {
-            // Show loading on button
-            const originalText = btnElement.textContent;
-            btnElement.disabled = true;
-            btnElement.textContent = '⟳ Updating...';
-            btnElement.classList.add('loading-spinner');
-
-            // Update badge visually
-            const badge = cardElement.querySelector('.status-badge');
-            if (badge) {
-                const statusClass = newStatus === 'Verified' ? 'verified' : newStatus === 'Resolved' ? 'resolved' : 'pending';
-                badge.className = `status-badge ${statusClass}`;
-                badge.innerHTML = `<span class="status-dot"></span>${newStatus}`;
-            }
-
-            // Update card data attribute for filtering
-            cardElement.dataset.status = newStatus;
-
-            // Update meta status text
-            const metaRows = cardElement.querySelectorAll('.report-meta-row span');
-            metaRows.forEach(span => {
-                if (span.textContent.includes('Status:')) {
-                    span.innerHTML = `<strong>Status:</strong> ${newStatus}`;
-                }
+            const res = await fetch(`${API}/api/admin/reports/${reportId}`, {
+                method: 'PUT',
+                headers: { 
+                    'Authorization': `Bearer ${getAdminToken()}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
             });
 
-            showToast(successMessage, 'success');
-
-            // Reset button after delay
-            setTimeout(() => {
-                btnElement.disabled = false;
-                btnElement.textContent = originalText;
-                btnElement.classList.remove('loading-spinner');
-            }, 800);
+            if (res.ok) {
+                showToast(`Report #${reportId} marked as ${newStatus}`, 'success');
+                loadReports(); // Refresh list
+                loadDashboardData(); // Update stats
+            } else {
+                showToast('Failed to update report status', 'error');
+            }
         } catch (err) {
             console.error('Failed to update report status', err);
-            showToast('Failed to update report status', 'error');
-            btnElement.disabled = false;
+            showToast('Connection error', 'error');
+        }
+    };
+
+    const handleDeleteReport = async (reportId) => {
+        if (!confirm(`Are you sure you want to delete report #${reportId}?`)) return;
+
+        try {
+            const res = await fetch(`${API}/api/admin/reports/${reportId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${getAdminToken()}` }
+            });
+
+            if (res.ok) {
+                showToast(`Report #${reportId} deleted`, 'success');
+                loadReports(); // Refresh list
+                loadDashboardData(); // Update stats
+            } else {
+                showToast('Failed to delete report', 'error');
+            }
+        } catch (err) {
+            console.error('Failed to delete report', err);
+            showToast('Connection error', 'error');
         }
     };
 
@@ -451,30 +530,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const handleReportFilter = (status) => {
-        const container = document.getElementById('reportsContainer');
-        if (!container) return;
-
-        const cards = container.querySelectorAll('.report-card-item');
-        if (cards.length === 0) return;
-
+        const rows = document.querySelectorAll('#reportsTableBody tr');
         let visibleCount = 0;
-        cards.forEach(card => {
-            if (status === '') {
-                card.style.display = '';
+        rows.forEach(row => {
+            if (row.classList.contains('empty-state')) return;
+            const rowStatus = row.dataset.status;
+            if (!status || rowStatus === status) {
+                row.style.display = '';
                 visibleCount++;
             } else {
-                const cardStatus = card.dataset.status || '';
-                if (cardStatus === status) {
-                    card.style.display = '';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
+                row.style.display = 'none';
             }
         });
-
         updateResultCount('reportsCount', visibleCount);
     };
+
+    // Refresh button for reports
+    const refreshReportsBtn = document.getElementById('refreshReportsBtn');
+    if (refreshReportsBtn) {
+        refreshReportsBtn.addEventListener('click', () => {
+            loadReports();
+            showToast('Reports list refreshed', 'info');
+        });
+    }
 
     // ── Section Data Loading on Click ──────────────────────────────────────────
     document.addEventListener('click', (e) => {

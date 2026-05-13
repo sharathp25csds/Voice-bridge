@@ -668,9 +668,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     reportForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name    = document.getElementById('r-name').value.trim();
+        const user    = getUser();
+        const name    = document.getElementById('r-name').value.trim() || user.name || 'Anonymous';
+        const email   = user.email || '';
         const type    = document.getElementById('r-type').value.trim();
         const message = document.getElementById('r-message').value.trim();
+        const userId  = user.id || null;
 
         if (!type) { showToast('Please select an issue type'); return; }
         if (!message) { showToast('Please enter a message'); return; }
@@ -679,11 +682,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${API}/api/reports`, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ name, type, message })
+                body:    JSON.stringify({ name, email, type, message, user_id: userId })
             });
             if (res.ok) {
                 showToast("Report submitted! We'll get back to you soon.");
                 reportForm.reset();
+                // If on Admin Portal (live refresh), this would be caught by polling if implemented, 
+                // but here it's just the user submission side.
             } else {
                 showToast('Failed to submit. Try again!');
             }

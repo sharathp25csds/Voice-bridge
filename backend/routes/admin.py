@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, create_access_token
-from models import db, User, CallLog, ChatHistory, Report
+from models import db, User, CallLog, ChatHistory, Report, CallSession
 import os
 import sqlite3
 import csv
@@ -32,7 +32,7 @@ def admin_login():
 def get_stats():
     try:
         total_users = User.query.count()
-        total_calls = CallLog.query.count()
+        total_calls = CallSession.query.count()
         total_chats = ChatHistory.query.count()
         total_reports = Report.query.count()
 
@@ -43,7 +43,8 @@ def get_stats():
             'total_reports': total_reports
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Stats Error: {str(e)}")
+        return jsonify({'error': f"Database error: {str(e)}"}), 500
 
 @admin_bp.route('/api/admin/users', methods=['GET'])
 @jwt_required()
@@ -57,17 +58,18 @@ def get_users():
             'created_at': u.created_at.isoformat() if u.created_at else None
         } for u in users])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Users Fetch Error: {str(e)}")
+        return jsonify({'error': f"Failed to fetch users: {str(e)}"}), 500
 
 @admin_bp.route('/api/admin/calls', methods=['GET'])
 @jwt_required()
 def get_calls():
     try:
         # Join with User to get names
-        sessions = CallSession.query.join(User, CallSession.user_id == User.id).all()
+        sessions = CallSession.query.outerjoin(User, CallSession.user_id == User.id).all()
         return jsonify([{
             'user_id': s.user_id,
-            'user_name': s.user.name if s.user else "Unknown",
+            'user_name': s.user.name if s.user else "Unknown User",
             'duration': s.duration,
             'started_at': s.started_at.isoformat() if s.started_at else None,
             'ended_at': s.ended_at.isoformat() if s.ended_at else None,
@@ -75,7 +77,8 @@ def get_calls():
             'date': s.created_at.strftime('%Y-%m-%d') if s.created_at else None
         } for s in sessions])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Calls Fetch Error: {str(e)}")
+        return jsonify({'error': f"Failed to fetch transcripts: {str(e)}"}), 500
 
 @admin_bp.route('/api/admin/chats', methods=['GET'])
 @jwt_required()
@@ -90,7 +93,8 @@ def get_chats():
             'created_at': c.created_at.isoformat() if c.created_at else None
         } for c in chats])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Chats Fetch Error: {str(e)}")
+        return jsonify({'error': f"Failed to fetch chats: {str(e)}"}), 500
 
 @admin_bp.route('/api/admin/reports', methods=['GET'])
 @jwt_required()
@@ -108,7 +112,8 @@ def get_reports():
             'created_at': r.created_at.isoformat() if r.created_at else None
         } for r in reports])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Reports Fetch Error: {str(e)}")
+        return jsonify({'error': f"Failed to fetch reports: {str(e)}"}), 500
 
 @admin_bp.route('/api/admin/reports/<int:report_id>', methods=['PUT'])
 @jwt_required()
@@ -143,24 +148,37 @@ def delete_report(report_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# Helper to get DB path
+def get_db_path():
+    # Try multiple locations to find the database
+    paths = [
+        'instance/voicebridge.db',
+        'backend/instance/voicebridge.db',
+        '../instance/voicebridge.db'
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return 'instance/voicebridge.db' # Default
+
 @admin_bp.route('/api/admin/tables', methods=['GET'])
 @jwt_required()
 def get_tables():
     try:
-        conn = sqlite3.connect('instance/app.db')
+        conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = [row[0] for row in cursor.fetchall()]
         conn.close()
         return jsonify({'tables': tables})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f"DB Inspector Error: {str(e)}"}), 500
 
 @admin_bp.route('/api/admin/table/<table_name>', methods=['GET'])
 @jwt_required()
 def get_table_data(table_name):
     try:
-        conn = sqlite3.connect('instance/app.db')
+        conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
 
         # Get columns
@@ -179,7 +197,7 @@ def get_table_data(table_name):
 
         return jsonify({'columns': columns, 'rows': data})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f"Table Data Error: {str(e)}"}), 500
 
 @admin_bp.route('/api/admin/table/<table_name>', methods=['POST'])
 @jwt_required()
@@ -190,7 +208,7 @@ def update_table_data(table_name):
         row_id = data.get('id')
 
         if action == 'delete' and row_id:
-            conn = sqlite3.connect('instance/app.db')
+            conn = sqlite3.connect('instance/voicebridge.db')
             cursor = conn.cursor()
             cursor.execute("DELETE FROM {} WHERE id = ?".format(table_name), (row_id,))
             conn.commit()

@@ -4,16 +4,29 @@ import uuid
 
 db = SQLAlchemy()
 
+
 class User(db.Model):
+    __tablename__ = 'user'
+
     id            = db.Column(db.Integer, primary_key=True)
     name          = db.Column(db.String(80), nullable=False)
     email         = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
-    call_logs     = db.relationship('CallLog', backref='user', lazy=True)
-    reports       = db.relationship('Report', backref='user', lazy=True)
+
+    # Relationships
+    call_logs     = db.relationship('CallLog',      backref='user',    lazy=True)
+    reports       = db.relationship('Report',       backref='user',    lazy=True)
+    call_sessions = db.relationship('CallSession',  backref='user',    lazy=True)
+    chat_history  = db.relationship('ChatHistory',  backref='user',    lazy=True)
+
+    def __repr__(self):
+        return f'<User {self.id} - {self.email}>'
+
 
 class CallLog(db.Model):
+    __tablename__ = 'call_log'
+
     id         = db.Column(db.Integer, primary_key=True)
     user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     peer_id    = db.Column(db.String(100))
@@ -21,7 +34,13 @@ class CallLog(db.Model):
     transcript = db.Column(db.Text, default='')
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def __repr__(self):
+        return f'<CallLog {self.id} - User {self.user_id}>'
+
+
 class CallSession(db.Model):
+    __tablename__ = 'call_session'
+
     id           = db.Column(db.Integer, primary_key=True)
     user_id      = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     contact_name = db.Column(db.String(120), nullable=True)
@@ -31,9 +50,17 @@ class CallSession(db.Model):
     ended_at     = db.Column(db.DateTime, nullable=True)
     duration     = db.Column(db.Integer, default=0)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
     captions     = db.relationship('CallCaption', backref='session', lazy=True, cascade='all, delete-orphan')
 
+    def __repr__(self):
+        return f'<CallSession {self.session_id}>'
+
+
 class CallCaption(db.Model):
+    __tablename__ = 'call_caption'
+
     id              = db.Column(db.Integer, primary_key=True)
     call_session_id = db.Column(db.Integer, db.ForeignKey('call_session.id'), nullable=False)
     speaker         = db.Column(db.String(40), nullable=True)
@@ -42,30 +69,43 @@ class CallCaption(db.Model):
     sequence_number = db.Column(db.Integer, nullable=False, default=1)
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def __repr__(self):
+        return f'<CallCaption {self.id} - Session {self.call_session_id}>'
+
+
 class Report(db.Model):
-    id         = db.Column(db.Integer, primary_key=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    name       = db.Column(db.String(80))
-    type       = db.Column(db.String(50))
-    message    = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __tablename__ = 'report'
 
-# Check what your User model's tablename is:
-class User(db.Model):
-    __tablename__ = 'user'   # ← whatever this says
-    ...
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    name        = db.Column(db.String(80))
+    report_type = db.Column('type', db.String(50))   # ← fixed: renamed to report_type, DB column stays 'type'
+    message     = db.Column(db.Text, nullable=False)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Then match it in ChatHistory:
+    def __init__(self, name=None, report_type=None, message=None, user_id=None):
+        self.name = name
+        self.report_type = report_type
+        self.message = message
+        self.user_id = user_id
+
+    def __repr__(self):
+        return f'<Report {self.id} - {self.report_type}>'
+
+
 class ChatHistory(db.Model):
     __tablename__ = 'chat_history'
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # ← must match exactly
-    role = db.Column(db.String(10), nullable=False)
-    message = db.Column(db.Text, nullable=False)
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role       = db.Column(db.String(10), nullable=False)
+    message    = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     def __init__(self, user_id: int, role: str, message: str):
         self.user_id = user_id
-        self.role = role
+        self.role    = role
         self.message = message
+
+    def __repr__(self):
+        return f'<ChatHistory {self.id} - User {self.user_id} - {self.role}>'

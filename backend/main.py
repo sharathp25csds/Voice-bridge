@@ -93,7 +93,7 @@ def transcribe_audio():
         text = transcript.text if hasattr(transcript, 'text') else ''
 
         if not text:
-            return jsonify({'error': 'Empty transcription result'}), 500
+            return jsonify({'transcript': ''}), 200
 
         return jsonify({'transcript': clean_transcript(text)})
 

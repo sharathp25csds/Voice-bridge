@@ -6,7 +6,7 @@
 // ==========================================
 // BACKEND CONNECTION
 // ==========================================
-const API =  'https://voice-bridge-1-esy4.onrender.com';
+const API = 'http://127.0.0.1:5000';
 
 const getToken = () => localStorage.getItem('vb_token');
 const getUser  = () => JSON.parse(localStorage.getItem('vb_user') || '{}');
@@ -361,29 +361,6 @@ document.addEventListener('DOMContentLoaded', () => {
         sttOutput.scrollTop = sttOutput.scrollHeight;
     };
 
-    const postAudioChunk = async (blob) => {
-        if (!blob || blob.size < 1000) return;
-        const data = new FormData();
-        data.append('audio', blob, 'speech.webm');
-        data.append('language', sttLang.value || 'en-IN');
-
-        try {
-            const response = await fetch(`${API}/api/transcribe`, {
-                method: 'POST',
-                body: data
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Transcription failed');
-            const transcript = formatTranscript(result.transcript || '');
-            if (transcript && transcript !== sttLastText) {
-                appendSttCaption(transcript);
-                sttLastText = transcript;
-            }
-        } catch (error) {
-            setSttStatus(`Transcription failed: ${error.message}`, true);
-        }
-    };
-
     const startSttCapture = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -413,20 +390,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 sttMonitor = requestAnimationFrame(checkSilence);
             };
 
-            const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-            recorder.ondataavailable = async (event) => {
-                if (event.data && event.data.size > 0) {
-                    await postAudioChunk(event.data);
-                }
+            let audioChunks = [];
+            const mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
             };
-            recorder.onerror = (event) => {
+            
+            mediaRecorder.onerror = (event) => {
                 setSttStatus(`Recorder error: ${event.error || 'unknown'}`, true);
             };
-            recorder.onstop = () => {
+            
+            mediaRecorder.onstop = async () => {
                 cancelAnimationFrame(sttMonitor);
                 audioContext.close();
+                
+                const audioBlob = new Blob(audioChunks, {
+                    type: "audio/webm"
+                });
+                
+                if (audioBlob.size === 0) return;
+                
+                console.log(audioBlob.size);
+                console.log(audioBlob.type);
+                
+                const formData = new FormData();
+                formData.append("audio", audioBlob, "recording.webm");
+                formData.append('language', 'en');
+
+                try {
+                    const response = await fetch(`${API}/api/transcribe`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || 'Transcription failed');
+                    const transcript = formatTranscript(result.transcript || '');
+                    if (transcript && transcript !== sttLastText) {
+                        appendSttCaption(transcript);
+                        sttLastText = transcript;
+                    }
+                } catch (error) {
+                    setSttStatus(`Transcription failed: ${error.message}`, true);
+                }
             };
-            recorder.start(1500);
+            
+            mediaRecorder.start();
 
             stream.getAudioTracks().forEach((track) => {
                 track.onended = () => {
@@ -437,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             });
 
-            sttSession = { stream, recorder, audioContext, source, analyser };
+            sttSession = { stream, recorder: mediaRecorder, audioContext, source, analyser };
             checkSilence();
             setSttStatus(`Listening in ${sttLang.options[sttLang.selectedIndex].text}`);
             micBtn.textContent = 'Stop Listening';

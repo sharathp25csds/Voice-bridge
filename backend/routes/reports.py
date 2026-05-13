@@ -1,38 +1,58 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from models import db, Report
 
 reports_bp = Blueprint('reports', __name__)
 
+
 @reports_bp.route('/api/reports', methods=['POST'])
 def submit_report():
-    data    = request.get_json()
-    type_   = data.get('type', '').strip()
-    message = data.get('message', '').strip()
+    try:
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({'error': 'Invalid or missing JSON data'}), 400
 
-    if not type_ or not message:
-        return jsonify({'error': 'Type and message are required'}), 400
+        type_   = data.get('type', '').strip()
+        message = data.get('message', '').strip()
 
-    db.session.add(Report(
-        name    = data.get('name', 'Anonymous'),
-        type    = type_,
-        message = message
-    ))
-    db.session.commit()
-    return jsonify({'saved': True}), 201
+        if not type_ or not message:
+            return jsonify({'error': 'Type and message are required'}), 400
+
+        if len(type_) > 100 or len(message) > 2000:
+            return jsonify({'error': 'Input exceeds maximum allowed length'}), 400
+
+        report = Report(
+            name        = (data.get('name') or 'Anonymous').strip()[:100],
+            report_type = type_,    # ← fixed: was type= now report_type=
+            message     = message
+        )
+
+        db.session.add(report)
+        db.session.commit()
+        return jsonify({'saved': True, 'id': report.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to save report', 'details': str(e)}), 500
 
 
 @reports_bp.route('/api/reports', methods=['GET'])
 @jwt_required()
 def get_reports():
-    rows = Report.query.order_by(Report.created_at.desc()).all()
-    return jsonify([
-        {
-            'id':      r.id,
-            'name':    r.name,
-            'type':    r.type,
-            'message': r.message,
-            'time':    r.created_at.isoformat()
-        }
-        for r in rows
-    ])
+    try:
+        rows = Report.query.order_by(Report.created_at.desc()).all()
+
+        return jsonify([
+            {
+                'id':      r.id,
+                'name':    r.name,
+                'type':    r.report_type,    # ← fixed: was r.type now r.report_type
+                'message': r.message,
+                'time':    r.created_at.isoformat() if r.created_at else None
+            }
+            for r in rows
+        ]), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to fetch reports', 'details': str(e)}), 500

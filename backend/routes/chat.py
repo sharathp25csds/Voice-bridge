@@ -1,22 +1,11 @@
-from flask import Flask, Blueprint, request, jsonify
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from flask_cors import CORS
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, ChatHistory
 from groq import Groq
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
-
-app = Flask(__name__)
-
-CORS(app)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-
-db.init_app(app)
-jwt = JWTManager(app)
 
 chat_bp = Blueprint('chat', __name__)
 client = Groq(api_key=os.getenv('GROQ_API_KEY'))
@@ -47,7 +36,8 @@ def chat():
             .all()
         )
         past.reverse()
-    except Exception:
+    except Exception as hist_err:
+        print(f'[Chat] Error loading history: {hist_err}')
         past = []
 
     messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
@@ -58,26 +48,49 @@ def chat():
     messages.append({'role': 'user', 'content': message})
 
     # Save user message
-    new_chat = ChatHistory(user_id=user_id, role='user', message=message)
-    db.session.add(new_chat)
-    db.session.commit()
-
-    # Call Groq API  ← FIXED: try/except now properly structured
     try:
+        new_chat = ChatHistory(user_id=user_id, role='user', message=message)
+        db.session.add(new_chat)
+        db.session.commit()
+    except Exception as save_err:
+        print(f'[Chat] Error saving user message: {save_err}')
+        db.session.rollback()
+        return jsonify({'error': 'Failed to save message'}), 500
+
+    # Call Groq API
+    try:
+        if not client:
+            return jsonify({'error': 'Groq client not initialized'}), 500
+            
         response = client.chat.completions.create(
             model='llama-3.3-70b-versatile',
             messages=messages,
         )
+        
+        if not response or not response.choices:
+            return jsonify({'error': 'No response from AI service'}), 502
+            
         reply = response.choices[0].message.content
 
-        # Save bot reply  ← FIXED: moved inside try, after getting reply
-        db.session.add(ChatHistory(user_id=user_id, role='bot', message=reply))
-        db.session.commit()
+        if not reply:
+            return jsonify({'error': 'Empty reply from AI service'}), 502
 
-        return jsonify({'reply': reply})  # ← FIXED: moved inside try
+        # Save bot reply
+        try:
+            bot_chat = ChatHistory(user_id=user_id, role='bot', message=reply)
+            db.session.add(bot_chat)
+            db.session.commit()
+        except Exception as bot_save_err:
+            print(f'[Chat] Error saving bot reply: {bot_save_err}')
+            db.session.rollback()
+            # Still return the reply even if saving failed
+            pass
 
-    except Exception as exc:           # ← FIXED: except now has proper variable
-        db.session.rollback()          # ← FIXED: rollback only on error
+        return jsonify({'reply': reply})
+
+    except Exception as exc:
+        print(f'[Chat] AI service error: {str(exc)}')
+        db.session.rollback()
         return jsonify({'error': f'AI service error: {str(exc)}'}), 502
 
 
@@ -95,8 +108,3 @@ def get_history():
         {'role': r.role, 'message': r.message, 'time': r.created_at.isoformat()}
         for r in rows
     ])
-
-app.register_blueprint(chat_bp)
-
-if __name__ == '__main__':
-    app.run(debug=True)

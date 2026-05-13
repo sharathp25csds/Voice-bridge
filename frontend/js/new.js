@@ -333,11 +333,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatTranscript = (text) => {
         let cleaned = text.trim().replace(/\s+/g, ' ');
         cleaned = cleaned.replace(/ \,/g, ',').replace(/ \./g, '.').replace(/ \?/g, '?').replace(/ \!/g, '!').replace(/ \;/g, ';');
+        // Handle both ASCII and Unicode characters for word boundaries
         cleaned = cleaned.replace(/\b(\w+)( \1\b)+/gi, '$1');
         cleaned = cleaned.replace(/\.{2,}/g, '.');
         cleaned = cleaned.replace(/\s+([,.!?;:])/g, '$1');
-        if (cleaned && !/[.!?]$/.test(cleaned)) cleaned += '.';
-        cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+        // Support Indian punctuation marks (|) and ASCII punctuation
+        if (cleaned && !/[.!?।؟।\u0964]$/.test(cleaned)) cleaned += '.';
+        // Only capitalize first character if it's ASCII; preserve Indian script capitalization
+        if (cleaned && cleaned.charCodeAt(0) < 128) {
+            cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+        }
         return cleaned;
     };
 
@@ -416,7 +421,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const formData = new FormData();
                 formData.append("audio", audioBlob, "recording.webm");
-                formData.append('language', 'en');
+                // Extract language code from BCP47 format (e.g., 'hi' from 'hi-IN')
+                const selectedLang = sttLang.value.split('-')[0];
+                formData.append('language', selectedLang);
 
                 try {
                     const response = await fetch(`${API}/api/transcribe`, {
@@ -571,7 +578,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('chatInput');
     const chatBody  = document.getElementById('chatBody');
 
+    // Defensive check for chat elements
+    if (!chatForm || !chatInput || !chatBody) {
+        console.error('Chat: Missing chat DOM elements', { chatForm: !!chatForm, chatInput: !!chatInput, chatBody: !!chatBody });
+    }
+
     const addMessage = (text, sender) => {
+        if (!chatBody) {
+            console.error('Chat: chatBody element not found');
+            return;
+        }
         const msgDiv = document.createElement('div');
         msgDiv.className = `msg ${sender}`;
         msgDiv.innerHTML = `
@@ -587,12 +603,17 @@ document.addEventListener('DOMContentLoaded', () => {
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const query = chatInput.value.trim();
-        if (!query) return;
+        if (!query) {
+            console.log('Chat: Empty message, ignoring');
+            return;
+        }
 
+        console.log('Chat: User submitted message:', query);
         addMessage(query, 'user');
         chatInput.value = '';
 
         if (!isLoggedIn()) {
+            console.log('Chat: User not logged in');
             addMessage('Please login first to chat with Bridge! 🔐', 'bot');
             setTimeout(() => openAuthModal('login'), 1000);
             return;
@@ -606,18 +627,37 @@ document.addEventListener('DOMContentLoaded', () => {
         chatBody.scrollTop = chatBody.scrollHeight;
 
         try {
+            const token = getToken();
+            console.log('Chat: Sending message to API...', { query, hasToken: !!token });
+            
             const res  = await fetch(`${API}/api/chat`, {
                 method:  'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${getToken()}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ message: query })
             });
+            
+            console.log('Chat: API response status:', res.status);
+            
             const data = await res.json();
+            console.log('Chat: API response data:', data);
+            
             document.getElementById('typing')?.remove();
-            addMessage(res.ok ? data.reply : 'Sorry, something went wrong. Try again!', 'bot');
+            
+            if (!res.ok) {
+                console.error('Chat: API returned error:', data.error);
+                addMessage(data.error || 'Sorry, something went wrong. Try again!', 'bot');
+            } else if (data.reply) {
+                console.log('Chat: Adding AI response:', data.reply);
+                addMessage(data.reply, 'bot');
+            } else {
+                console.error('Chat: No reply in response');
+                addMessage('Sorry, I didn\'t get a proper response. Try again!', 'bot');
+            }
         } catch (err) {
+            console.error('Chat: Fetch error:', err);
             document.getElementById('typing')?.remove();
             addMessage('Cannot connect to server. Is backend running?', 'bot');
         }
@@ -1057,6 +1097,13 @@ document.addEventListener('DOMContentLoaded', () => {
             callRecognition.stop();
         }
     });
+
+    const stopCaptions = () => {
+    recognitionActive    = false;
+    recognitionRestarting = true;   // ← prevent auto-restart
+    recognition?.stop();
+    recognition = null;
+};
 
     // =========================================
     // CALL HISTORY MANAGEMENT

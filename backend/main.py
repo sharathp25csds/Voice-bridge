@@ -46,17 +46,28 @@ app.register_blueprint(admin_bp)
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def clean_transcript(text: str) -> str:
+    """
+    Clean and format transcript while preserving Unicode characters for Indian languages.
+    Supports: English, Hindi, Kannada, Tamil, Telugu, Marathi, Malayalam
+    """
     result = text.strip().replace('\n', ' ').replace('  ', ' ').strip()
+    
+    # Preserve Unicode for Indian languages - only clean ASCII punctuation
     result = result.replace(' ,', ',').replace(' .', '.').replace(' !', '!').replace(' ?', '?')
     result = result.replace(' ;', ';').replace(' :', ':')
     result = result.replace('..', '.')
     result = ' '.join(result.split())
-    result = result.replace(' i ', ' I ')
-
-    if result and result[-1] not in '.!?':
+    
+    # Only apply English-specific fixes if text contains primarily ASCII
+    if ord(result[0]) < 128:  # First character is ASCII
+        result = result.replace(' i ', ' I ')
+    
+    if result and result[-1] not in '.!?।':  # Added Indian punctuation mark
         result += '.'
-    if result:
+    
+    if result and ord(result[0]) < 128:  # First character is ASCII
         result = result[0].upper() + result[1:]
+    
     return result
 
 
@@ -74,7 +85,7 @@ def transcribe_audio():
         return jsonify({'error': 'GROQ_API_KEY not configured in .env'}), 500
 
     audio_file = request.files['audio']
-    language   = request.form.get('language', 'en')  # Groq supports 'en', not 'en-IN'
+    language   = request.form.get('language', 'en')
     model      = os.getenv('GROQ_TRANSCRIBE_MODEL', 'whisper-large-v3')
 
     with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as out_file:
@@ -95,7 +106,11 @@ def transcribe_audio():
         if not text:
             return jsonify({'transcript': ''}), 200
 
-        return jsonify({'transcript': clean_transcript(text)})
+        # Ensure UTF-8 encoding for Indian language transcripts
+        cleaned = clean_transcript(text)
+        response = jsonify({'transcript': cleaned})
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
 
     except Exception as exc:
         return jsonify({'error': str(exc)}), 500

@@ -11,7 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+  <link rel="icon" href="data:,">
+  <script src="js/vendor/peerjs.min.js"></script>
 </head>
 
 <body>
@@ -326,7 +327,7 @@
   </footer>
 
   <!-- AUTH MODAL -->
-  <div class="modal" id="authModal" aria-hidden="true">
+  <div class="modal" id="authModal" inert>
     <div class="modal-backdrop" id="closeAuth"></div>
     <div class="modal-card" style="max-width:420px;width:100%;padding:32px;">
       <button class="modal-close" id="xCloseAuth" aria-label="Close">×</button>
@@ -353,7 +354,7 @@
   </div>
 
   <!-- LIVE CAPTION CALL MODAL -->
-  <div class="modal" id="callModal" aria-hidden="true">
+  <div class="modal" id="callModal" inert>
     <div class="modal-backdrop" id="closeCall"></div>
     <div class="modal-card call-modal-card">
       <button class="modal-close" id="xCloseCall" aria-label="Close">×</button>
@@ -460,7 +461,7 @@
   </div>
 
   <!-- HISTORY VIEWER MODAL -->
-  <div class="modal" id="historyModal" aria-hidden="true">
+  <div class="modal" id="historyModal" inert>
     <div class="modal-backdrop" id="closeHistory"></div>
     <div class="modal-card wide history-viewer-card">
       <button class="modal-close" id="xCloseHistory" aria-label="Close">×</button>
@@ -486,7 +487,7 @@
   </div>
 
   <!-- COMMUNICATION SUITE MODAL -->
-  <div class="modal" id="commModal" aria-hidden="true">
+  <div class="modal" id="commModal" inert>
     <div class="modal-backdrop" id="closeComm"></div>
     <div class="modal-card wide">
       <button class="modal-close" id="xClose" aria-label="Close">×</button>
@@ -537,13 +538,6 @@
               <option value="te-IN">🇮🇳 Telugu</option>
               <option value="ml-IN">🇮🇳 Malayalam</option>
             </select>
-          </div>
-          <div class="voice-toggle">
-            <label>🎙️ Voice Type</label>
-            <div class="toggle-btns">
-              <button class="toggle-btn active" id="femaleBtn">👩 Female</button>
-              <button class="toggle-btn" id="maleBtn">👨 Male</button>
-            </div>
           </div>
           <button id="speakBtn" class="btn btn-hero w-full">
             <span class="btn-icon">📣</span><span class="btn-text">Speak Out Loud</span>

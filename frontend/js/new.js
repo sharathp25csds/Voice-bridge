@@ -63,7 +63,7 @@ const openAuthModal = (mode = 'login') => {
     const nameField     = document.getElementById('nameField');
 
     authMode = mode;
-    authModal.setAttribute('aria-hidden', 'false');
+    authModal.removeAttribute('inert');
     authModal.style.display = 'flex';
     authError.style.display = 'none';
     authEmail.value    = '';
@@ -89,7 +89,7 @@ const openAuthModal = (mode = 'login') => {
 
 const closeAuthModal = () => {
     const authModal = document.getElementById('authModal');
-    authModal.setAttribute('aria-hidden', 'true');
+    authModal.setAttribute('inert', '');
     authModal.style.display = 'none';
 };
 
@@ -152,9 +152,9 @@ document.addEventListener('DOMContentLoaded', () => {
         navHomeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const cm = document.getElementById('commModal');
-            if (cm) { cm.setAttribute('aria-hidden', 'true'); cm.style.display = 'none'; }
+            if (cm) { cm.setAttribute('inert', ''); cm.style.display = 'none'; }
             const am = document.getElementById('authModal');
-            if (am) { am.setAttribute('aria-hidden', 'true'); am.style.display = 'none'; }
+            if (am) { am.setAttribute('inert', ''); am.style.display = 'none'; }
             window.location.hash = '#Home';
         });
     }
@@ -164,12 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeBtns = [document.getElementById('closeComm'), document.getElementById('xClose')];
 
     const openModal = () => {
-        commModal.setAttribute('aria-hidden', 'false');
+        commModal.removeAttribute('inert');
         commModal.style.display = 'flex';
     };
 
     const closeModal = () => {
-        commModal.setAttribute('aria-hidden', 'true');
+        commModal.setAttribute('inert', '');
         commModal.style.display = 'none';
     };
 
@@ -491,88 +491,203 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- 5. TEXT-TO-SPEECH (TTS) ---
-    const speakBtn  = document.getElementById('speakBtn');
-    const ttsInput  = document.getElementById('ttsInput');
-    const ttsLang   = document.getElementById('ttsLang');
-    const femaleBtn = document.getElementById('femaleBtn');
-    const maleBtn   = document.getElementById('maleBtn');
+    const speakBtn = document.getElementById('speakBtn');
+    const ttsInput = document.getElementById('ttsInput');
+    const ttsLang  = document.getElementById('ttsLang');
 
-    let selectedGender = 'female';
-    let isSpeaking     = false;
-
-    femaleBtn.addEventListener('click', () => {
-        selectedGender = 'female';
-        femaleBtn.classList.add('active');
-        maleBtn.classList.remove('active');
-    });
-
-    maleBtn.addEventListener('click', () => {
-        selectedGender = 'male';
-        maleBtn.classList.add('active');
-        femaleBtn.classList.remove('active');
-    });
+    let isSpeaking = false;
 
     const langMap = {
         'en-IN': 'en-IN', 'hi-IN': 'hi-IN', 'kn-IN': 'kn-IN',
-        'ta-IN': 'ta-IN', 'te-IN': 'te-IN', 'ml-IN': 'ml-IN'
+        'ta-IN': 'ta-IN', 'te-IN': 'te-IN', 'mr-IN': 'mr-IN', 'ml-IN': 'ml-IN'
     };
 
-    function getBestVoice(langCode, gender) {
-        const voices     = window.speechSynthesis.getVoices();
-        const targetLang = langMap[langCode] || 'en-IN';
-        let match = voices.find(v => v.lang === targetLang && v.name.toLowerCase().includes(gender));
-        if (!match) match = voices.find(v => v.lang === targetLang);
-        if (!match) match = voices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
-        return match || voices[0];
+    const speechSupported = typeof window !== 'undefined'
+        && 'speechSynthesis' in window
+        && typeof window.SpeechSynthesisUtterance !== 'undefined';
+
+    let voices = [];
+    let voicesReady = false;
+
+    function loadVoices() {
+        voices = window.speechSynthesis.getVoices() || [];
+        voicesReady = voices.length > 0;
+        console.log('TTS: voices loaded', voices.length, voices.map(v => `${v.name} (${v.lang})`));
     }
 
-    speakBtn.addEventListener('click', () => {
-        const text = ttsInput.value.trim();
-        if (!text) { showToast("Please enter some text first!"); return; }
+    function waitForVoices() {
+        return new Promise((resolve) => {
+            if (voicesReady) {
+                return resolve();
+            }
+            const timeout = setTimeout(() => {
+                loadVoices();
+                resolve();
+            }, 300);
+            const handler = () => {
+                loadVoices();
+                if (voicesReady) {
+                    clearTimeout(timeout);
+                    window.speechSynthesis.onvoiceschanged = null;
+                    resolve();
+                }
+            };
+            window.speechSynthesis.onvoiceschanged = handler;
+            loadVoices();
+        });
+    }
 
-        if (isSpeaking) {
-            window.speechSynthesis.cancel();
-            speakBtn.innerHTML = '<span class="btn-icon">📣</span><span class="btn-text">Speak Out Loud</span>';
-            speakBtn.disabled  = false;
-            isSpeaking = false;
+    if (speechSupported) {
+        loadVoices();
+    } else {
+        console.warn('TTS: SpeechSynthesis unsupported in this browser');
+    }
+
+function isVoiceEligible(voice) {
+    if (!voice) return false;
+    const name = (voice.name || '').toLowerCase();
+    if (/online/i.test(name) || /natural/i.test(name)) return false;
+    if (voice.localService === false) return false;
+    return true;
+}
+
+function findVoiceByLanguage(langCode, list) {
+    return list.find(v => v.lang === langCode)
+        || list.find(v => v.lang.startsWith(langCode.split('-')[0]));
+}
+
+function getBestVoice(langCode) {
+    const targetLang = langMap[langCode] || 'en-IN';
+    const supported = voices.filter(isVoiceEligible);
+
+    let match = findVoiceByLanguage(targetLang, supported);
+    if (!match) match = findVoiceByLanguage('en-IN', supported);
+    if (!match) match = supported.find(v => v.lang.startsWith('en'));
+    if (!match) match = supported[0];
+    if (!match) match = voices.find(v => v.localService !== false && !/online|natural/i.test((v.name || '').toLowerCase()));
+    if (!match) match = voices[0] || null;
+    return match;
+}
+
+function createUtterance(text, voice, lang) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = voice?.lang || lang || 'en-IN';
+    utterance.volume = 1.0;
+    utterance.pitch = 1.0;
+    utterance.rate = 1.0;
+    if (voice) utterance.voice = voice;
+    return utterance;
+}
+
+function resetSpeakBtn() {
+    if (!speakBtn) return;
+    speakBtn.innerHTML = '<span class="btn-icon">📣</span><span class="btn-text">Speak Out Loud</span>';
+    speakBtn.disabled  = false;
+    isSpeaking         = false;
+}
+
+if (speakBtn) {
+    speakBtn.addEventListener('click', async () => {
+        if (!speechSupported) {
+            showToast('Text-to-speech is not supported in this browser.');
             return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang  = langMap[ttsLang.value] || 'en-IN';
+        let text = (ttsInput.value || '').trim();
+        const maxTextLength = 2000;
+        if (!text) {
+            showToast('Please enter some text first!');
+            return;
+        }
+        if (text.length > maxTextLength) {
+            text = text.slice(0, maxTextLength);
+        }
 
-        const trySpeak = () => {
-            const voice = getBestVoice(ttsLang.value, selectedGender);
-            if (voice) utterance.voice = voice;
-            utterance.pitch = selectedGender === 'male' ? 0.5 : 1.6;
-            utterance.rate  = selectedGender === 'male' ? 0.95 : 1.05;
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            resetSpeakBtn();
+            return;
+        }
 
-            utterance.onstart = () => {
-                isSpeaking = true;
-                speakBtn.innerHTML = '<span class="btn-icon">🔊</span><span class="btn-text">Stop Speaking</span>';
-                speakBtn.disabled  = false;
-            };
-            utterance.onend = () => {
-                isSpeaking = false;
-                speakBtn.innerHTML = '<span class="btn-icon">📣</span><span class="btn-text">Speak Out Loud</span>';
-                speakBtn.disabled  = false;
-            };
-            utterance.onerror = (e) => {
-                isSpeaking = false;
-                showToast("⚠️ Speech error: " + e.error);
-                speakBtn.innerHTML = '<span class="btn-icon">📣</span><span class="btn-text">Speak Out Loud</span>';
-                speakBtn.disabled  = false;
-            };
-            window.speechSynthesis.speak(utterance);
+        await waitForVoices();
+
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+            window.speechSynthesis.cancel();
+            resetSpeakBtn();
+        }
+
+        window.speechSynthesis.cancel();
+
+        const baseLang = langMap[ttsLang.value] || 'en-IN';
+        let voice = getBestVoice(ttsLang.value);
+        console.log('TTS: speak selected voice', voice?.name, voice?.lang, 'lang', ttsLang.value, 'voices', voices.length);
+        let utterance = createUtterance(text, voice, baseLang);
+
+        if (!voice) {
+            console.warn('TTS: no voice found for', ttsLang.value, 'using fallback voice');
+        }
+
+        let speakStarted = false;
+        let retriedFallback = false;
+
+        const speakCurrentUtterance = (currentUtterance) => {
+            try {
+                window.speechSynthesis.speak(currentUtterance);
+            } catch (speakError) {
+                console.error('TTS: speak() failed', speakError);
+                if (!speakStarted) {
+                    resetSpeakBtn();
+                }
+                showToast('⚠️ Speech playback failed. Please try again.');
+            }
         };
 
-        if (window.speechSynthesis.getVoices().length === 0) {
-            window.speechSynthesis.onvoiceschanged = trySpeak;
-        } else {
-            trySpeak();
-        }
-    });
+        utterance.onstart = () => {
+            speakStarted = true;
+            isSpeaking = true;
+            speakBtn.innerHTML = '<span class="btn-icon">🔊</span><span class="btn-text">Stop Speaking</span>';
+            speakBtn.disabled = false;
+        };
 
+        utterance.onend = () => resetSpeakBtn();
+
+        utterance.onerror = (e) => {
+            if (e.error === 'interrupted') return;
+            if (e.error === 'synthesis-failed' && !retriedFallback) {
+                retriedFallback = true;
+                const fallbackVoice = getBestVoice('en-IN');
+                if (fallbackVoice && fallbackVoice.name !== voice?.name) {
+                    console.warn('TTS: synthesis-failed, retrying with fallback voice', fallbackVoice.name, fallbackVoice.lang);
+                    voice = fallbackVoice;
+                    utterance = createUtterance(text, fallbackVoice, baseLang);
+                    utterance.onstart = () => {
+                        speakStarted = true;
+                        isSpeaking = true;
+                        speakBtn.innerHTML = '<span class="btn-icon">🔊</span><span class="btn-text">Stop Speaking</span>';
+                        speakBtn.disabled = false;
+                    };
+                    utterance.onend = () => resetSpeakBtn();
+                    utterance.onerror = (fallbackError) => {
+                        if (fallbackError.error === 'interrupted') return;
+                        console.error('TTS: fallback utterance error', fallbackError.error);
+                        showToast('⚠️ Speech error: ' + fallbackError.error);
+                        resetSpeakBtn();
+                    };
+                    window.speechSynthesis.cancel();
+                    speakCurrentUtterance(utterance);
+                    return;
+                }
+            }
+            console.error('TTS: utterance error', e.error);
+            showToast('⚠️ Speech error: ' + e.error);
+            resetSpeakBtn();
+        };
+
+        speakCurrentUtterance(utterance);
+    });
+} else {
+    console.error('TTS: speakBtn element not found');
+}
     // --- 6. BRIDGE AI CHATBOT ---
     const chatForm  = document.getElementById('chatForm');
     const chatInput = document.getElementById('chatInput');
@@ -741,8 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================
     // PHASE 3 — LIVE CAPTION CALL
     // =========================================
-
-    const callModal         = document.getElementById('callModal');
+const callModal         = document.getElementById('callModal');
     const openCallModalBtn  = document.getElementById('openCallModal');
     const closeCallBtns     = [document.getElementById('closeCall'), document.getElementById('xCloseCall')];
     const myPeerIdEl        = document.getElementById('myPeerId');
@@ -758,6 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hangUpBtn         = document.getElementById('hangUpBtn');
     const micToggleBtn      = document.getElementById('micToggleBtn');
     const remoteAudio       = document.getElementById('remoteAudio');
+    if (remoteAudio) remoteAudio.volume = 1.0;
     const callLang          = document.getElementById('callLang');
     const historySearch     = document.getElementById('historySearch');
     const historyList       = document.getElementById('historyList');
@@ -780,6 +895,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCall     = null;
     let dataChannel     = null;
     let localStream     = null;
+    let originalStream  = null; 
+    let audioContext    = null;
     let callRecognition = null;
     let isMuted         = false;
     let micOn           = true;
@@ -790,13 +907,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let callSessionUUID = null;
     let callSaved       = false;
     let callCaptions    = [];
-    let historyPage     = 1;
-    let historyLimit    = 8;
-    let historySearchTerm = '';
-    let activeHistorySessionId = null;
 
     const openCallModal = () => {
-        callModal.setAttribute('aria-hidden', 'false');
+        callModal.removeAttribute('inert');
         callModal.style.display = 'flex';
         initPeer();
         contactNameInput.value = '';
@@ -806,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const closeCallModal = () => {
-        callModal.setAttribute('aria-hidden', 'true');
+        callModal.setAttribute('inert', '');
         callModal.style.display = 'none';
         endCall();
         if (peer && !peer.destroyed) { peer.destroy(); peer = null; }
@@ -815,10 +928,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (openCallModalBtn) {
         openCallModalBtn.addEventListener('click', () => {
-            if (isLoggedIn()) {
+            if (typeof isLoggedIn === 'function' && isLoggedIn()) {
                 openCallModal();
-            } else {
+            } else if (typeof openAuthModal === 'function') {
                 openAuthModal('login');
+            } else {
+                openCallModal(); // Fallback if auth isn't defined
             }
         });
     }
@@ -852,19 +967,21 @@ document.addEventListener('DOMContentLoaded', () => {
             setStatus('Incoming call... connecting', 'ready');
             navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
                 localStream  = stream;
-                attachMicDisconnectHandler(stream);
+                originalStream = stream;
                 callStartTime = Date.now();
                 callStartedAt = new Date();
                 callSessionUUID = callSessionUUID || (crypto?.randomUUID?.() || Math.random().toString(36).slice(2));
-                callCaptions = [];
-                callSaved = false;
+                
                 incomingCall.answer(stream);
                 currentCall  = incomingCall;
                 handleCallStream(incomingCall);
                 setStatus('Connected — captions are live', 'connected');
                 callActive = true;
                 startCaptioning();
-            }).catch(() => setStatus('Microphone access denied', 'error'));
+            }).catch((err) => {
+                console.error("Mic Error:", err);
+                setStatus('Microphone access denied', 'error');
+            });
         });
 
         peer.on('connection', (conn) => {
@@ -872,90 +989,77 @@ document.addEventListener('DOMContentLoaded', () => {
             dataChannel.on('data', (data) => showThemCaption(data));
         });
 
-        peer.on('error', (err) => setStatus('Connection error: ' + err.type, 'error'));
+        peer.on('error', (err) => {
+            console.error('PeerJS Error:', err.type);
+            setStatus('Error: ' + err.type, 'error');
+        });
     };
 
-    startCallBtn.addEventListener('click', () => {
-        const remotePeerId = remotePeerIdInput.value.trim();
-        if (!remotePeerId) { showToast('Please enter the other person\'s Peer ID!'); return; }
-        if (peer && remotePeerId === peer.id) { showToast("You can't call yourself!"); return; }
+    const setupAudioProcess = async (stream) => {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        await audioContext.resume();
+        const source = audioContext.createMediaStreamSource(stream);
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 2.0; 
+        const destination = audioContext.createMediaStreamDestination();
+        source.connect(gainNode);
+        gainNode.connect(destination);
+        return destination.stream;
+    };
 
-        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-            localStream   = stream;
-            attachMicDisconnectHandler(stream);
+    startCallBtn.addEventListener('click', async () => {
+        const remotePeerId = remotePeerIdInput.value.trim();
+        if (!remotePeerId) return;
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { echoCancellation: true, noiseSuppression: true } 
+            });
+
+            originalStream = stream;
+            localStream = await setupAudioProcess(stream);
+            
             callStartTime = Date.now();
             callStartedAt = new Date();
-            callSessionUUID = callSessionUUID || (crypto?.randomUUID?.() || Math.random().toString(36).slice(2));
-            callCaptions = [];
-            callSaved = false;
+            callSessionUUID = callSessionUUID || crypto.randomUUID();
 
-            const call = peer.call(remotePeerId, stream);
+            const call = peer.call(remotePeerId, localStream);
             currentCall = call;
             handleCallStream(call);
 
-            const conn  = peer.connect(remotePeerId);
+            const conn = peer.connect(remotePeerId);
             dataChannel = conn;
-
             conn.on('data', (data) => showThemCaption(data));
 
-            let connectedViaOpen = false;
-            const fallbackTimer  = setTimeout(() => {
-                if (!connectedViaOpen && callActive) setStatus('Connected — captions are live', 'connected');
-            }, 5000);
-
             conn.on('open', () => {
-                connectedViaOpen = true;
-                clearTimeout(fallbackTimer);
                 setStatus('Connected — captions are live', 'connected');
                 callActive = true;
                 startCaptioning();
             });
 
-            conn.on('error', (err) => {
-                clearTimeout(fallbackTimer);
-                setStatus('Data channel error: ' + err.type, 'error');
-            });
-
-            setStatus('Calling...', 'ready');
-
-        }).catch(() => {
+        } catch (err) {
+            console.error(err);
             setStatus('Microphone access denied', 'error');
-            showToast('Please allow microphone access to make a call.');
-        });
+        }
     });
 
     const handleCallStream = (call) => {
-        call.on('stream', (remoteStream) => { remoteAudio.srcObject = remoteStream; });
-        call.on('close',  () => endCall());
-        call.on('error',  () => { setStatus('Call error occurred', 'error'); endCall(); });
-    };
-
-    const attachMicDisconnectHandler = (stream) => {
-        stream.getAudioTracks().forEach((track) => {
-            track.onended = () => {
-                setStatus('Microphone disconnected — attempting reconnect...', 'error');
-                if (callRecognition) { callRecognition.stop(); callRecognition = null; }
-                navigator.mediaDevices.getUserMedia({ audio: true }).then((replacement) => {
-                    localStream = replacement;
-                    setStatus('Microphone reconnected — captions restoring', 'connected');
-                    if (micOn) startCaptioning();
-                }).catch(() => {
-                    setStatus('Unable to restore microphone. Please reconnect your device.', 'error');
-                });
-            };
+        call.on('stream', (remoteStream) => { 
+            if (remoteAudio) remoteAudio.srcObject = remoteStream; 
         });
+        call.on('close', () => endCall());
     };
 
     const startCaptioning = () => {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) { showToast('Speech recognition not supported in this browser.'); return; }
+        if (!SR || !callActive) return;
 
-        if (callRecognition) { callRecognition.stop(); callRecognition = null; }
+        if (callRecognition) callRecognition.stop();
 
-        callRecognition                  = new SR();
-        callRecognition.continuous       = true;
-        callRecognition.interimResults   = true;
-        callRecognition.lang             = callLang.value;
+        callRecognition = new SR();
+        callRecognition.continuous = true;
+        callRecognition.interimResults = true;
+        callRecognition.lang = callLang.value;
 
         callRecognition.onresult = (event) => {
             let interim = '', final = '';
@@ -966,149 +1070,61 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (final) {
-                youCaptionEl.querySelector('.caption-interim')?.remove();
-                createCaptionLine(youCaptionEl, final, 'Speaker 1');
-                if (dataChannel && dataChannel.open) dataChannel.send(final);
-            } else if (interim) {
-                let interimEl = youCaptionEl.querySelector('.caption-interim');
-                if (!interimEl) {
-                    interimEl           = document.createElement('span');
-                    interimEl.className = 'caption-interim';
-                    youCaptionEl.appendChild(interimEl);
-                }
-                interimEl.textContent  = formatTranscript(interim);
+                const container = document.createElement('div');
+                container.className = 'caption-line you';
+                container.textContent = final;
+                youCaptionEl.appendChild(container);
                 youCaptionEl.scrollTop = youCaptionEl.scrollHeight;
+                if (dataChannel && dataChannel.open) dataChannel.send(final);
+                
+                callCaptions.push({ speaker: 'You', text: final, time: new Date().toISOString() });
             }
         };
 
         callRecognition.onend = () => {
-            if (callActive && micOn) {
-                setTimeout(() => {
-                    if (callActive && micOn) {
-                        callRecognition?.start();
-                    }
-                }, 500);
-            }
+            if (callActive && micOn) callRecognition.start();
         };
 
-        callRecognition.onerror = (event) => {
-            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                setStatus('Speech recognition blocked by browser permission.', 'error');
-                return;
-            }
-            if (event.error !== 'no-speech' && callActive && micOn) {
-                setStatus('Captions paused. Reconnecting speech recognition...', 'error');
-                setTimeout(() => { if (callActive && micOn) callRecognition?.start(); }, 1200);
-            }
-        };
-
-        callRecognition.start();
+        try {
+            callRecognition.start();
+        } catch (e) {
+            console.error("SR Start Error:", e);
+        }
     };
 
     const showThemCaption = (text) => {
-        createCaptionLine(themCaptionEl, text, 'Speaker 2');
+        const container = document.createElement('div');
+        container.className = 'caption-line them';
+        container.textContent = text;
+        themCaptionEl.appendChild(container);
+        themCaptionEl.scrollTop = themCaptionEl.scrollHeight;
+        callCaptions.push({ speaker: 'Them', text: text, time: new Date().toISOString() });
     };
 
     muteBtn.addEventListener('click', () => {
-        if (!localStream) return;
+        if (!originalStream) return;
         isMuted = !isMuted;
-        localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+        originalStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
         muteBtn.classList.toggle('muted-active', isMuted);
         muteBtn.querySelector('span').textContent = isMuted ? 'Unmute' : 'Mute';
-    });
-
-    micToggleBtn.addEventListener('click', () => {
-        if (!callActive) return;
-        micOn = !micOn;
-        if (micOn) {
-            micToggleBtn.querySelector('span').textContent = 'Mic On';
-            micToggleBtn.classList.remove('muted-active');
-            startCaptioning();
-        } else {
-            micToggleBtn.querySelector('span').textContent = 'Mic Off';
-            micToggleBtn.classList.add('muted-active');
-            if (callRecognition) { callRecognition.stop(); callRecognition = null; }
-        }
-    });
-
-    const themeBtn = document.getElementById('toggleCaptionThemeBtn');
-    themeBtn?.addEventListener('click', () => {
-        callModal.classList.toggle('dark');
-        const isDark = callModal.classList.contains('dark');
-        themeBtn.querySelector('span').textContent = isDark ? 'Light mode' : 'Dark mode';
     });
 
     hangUpBtn.addEventListener('click', () => endCall());
 
     const endCall = () => {
-        callEndedAt = new Date();
-        
-        if (isLoggedIn() && !callSaved && callStartedAt) {
-            const duration = Math.floor((Date.now() - callStartTime) / 1000);
-            const contactName = contactNameInput?.value?.trim() || remotePeerIdInput.value?.trim() || 'Unknown';
-            
-            const payload = {
-                session_id: callSessionUUID,
-                contact_name: contactName,
-                language: callLang.value || 'en-IN',
-                started_at: callStartedAt.toISOString(),
-                ended_at: callEndedAt.toISOString(),
-                duration: duration,
-                captions: callCaptions
-            };
-
-            fetch(`${API}/api/calls`, {
-                method:  'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${getToken()}`
-                },
-                body: JSON.stringify(payload)
-            }).catch(() => {});
-            
-            callSaved = true;
-        }
-
-        callActive    = false;
-        callStartTime = null;
-        callStartedAt = null;
-
+        callActive = false;
         if (callRecognition) { callRecognition.stop(); callRecognition = null; }
-        if (currentCall)     { currentCall.close();   currentCall     = null; }
-        if (localStream)     { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-        if (dataChannel)     { dataChannel.close();   dataChannel     = null; }
+        if (currentCall) { currentCall.close(); currentCall = null; }
+        if (originalStream) { originalStream.getTracks().forEach(t => t.stop()); originalStream = null; }
+        if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+        if (audioContext) { audioContext.close(); audioContext = null; }
+        if (dataChannel) { dataChannel.close(); dataChannel = null; }
 
-        remoteAudio.srcObject = null;
-
-        youCaptionEl.innerHTML  = '<span class="caption-placeholder">Your speech will appear here...</span>';
-        themCaptionEl.innerHTML = '<span class="caption-placeholder">Their captions will appear here...</span>';
-
-        if (remotePeerIdInput.value.trim()) remotePeerIdInput.value = '';
-        if (contactNameInput) contactNameInput.value = '';
-
-        isMuted = false;
-        micOn   = true;
-        muteBtn.classList.remove('muted-active');
-        muteBtn.querySelector('span').textContent     = 'Mute';
-        micToggleBtn.classList.remove('muted-active');
-        micToggleBtn.querySelector('span').textContent = 'Mic On';
-
-        setStatus('Call ended — ready for a new call', 'ready');
+        if (remoteAudio) remoteAudio.srcObject = null;
+        setStatus('Call ended', 'ready');
+        
+        // Add save-to-database logic here if needed
     };
-
-    callLang.addEventListener('change', () => {
-        if (callActive && callRecognition && micOn) {
-            callRecognition.lang = callLang.value;
-            callRecognition.stop();
-        }
-    });
-
-    const stopCaptions = () => {
-    recognitionActive    = false;
-    recognitionRestarting = true;   // ← prevent auto-restart
-    recognition?.stop();
-    recognition = null;
-};
 
     // =========================================
     // CALL HISTORY MANAGEMENT
@@ -1122,7 +1138,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (search) url += `&search=${encodeURIComponent(search)}`;
 
             const res = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${getToken()}` }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (getToken() || '')
+                }
             });
             const data = await res.json();
 
@@ -1192,7 +1211,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const res = await fetch(`${API}/api/call-sessions/${sessionId}`, {
-                headers: { 'Authorization': `Bearer ${getToken()}` }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (getToken() || '')
+                }
             });
             const session = await res.json();
 
@@ -1237,7 +1259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 conversationView.innerHTML = '<p style="color: hsl(var(--muted-foreground)); text-align: center;">No captions recorded for this session.</p>';
             }
 
-            historyModal.setAttribute('aria-hidden', 'false');
+            historyModal.removeAttribute('inert');
             historyModal.style.display = 'flex';
         } catch (err) {
             console.error('Failed to load session details', err);
@@ -1246,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const closeHistoryViewer = () => {
-        historyModal.setAttribute('aria-hidden', 'true');
+        historyModal.setAttribute('inert', '');
         historyModal.style.display = 'none';
         activeHistorySessionId = null;
     };
@@ -1259,7 +1281,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${API}/api/call-sessions/${activeHistorySessionId}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${getToken()}` }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (getToken() || '')
+                }
             });
 
             if (res.ok) {

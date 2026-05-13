@@ -49,7 +49,7 @@ def get_stats():
 @jwt_required()
 def get_users():
     try:
-        users = User.query.all()
+        users = User.query.order_by(User.created_at.desc()).all()
         return jsonify([{
             'id': u.id,
             'name': u.name,
@@ -63,15 +63,17 @@ def get_users():
 @jwt_required()
 def get_calls():
     try:
-        calls = CallLog.query.all()
+        # Join with User to get names
+        sessions = CallSession.query.join(User, CallSession.user_id == User.id).all()
         return jsonify([{
-            'id': c.id,
-            'user_id': c.user_id,
-            'peer_id': c.peer_id,
-            'duration': c.duration,
-            'transcript': c.transcript,
-            'created_at': c.started_at.isoformat() if c.started_at else None
-        } for c in calls])
+            'user_id': s.user_id,
+            'user_name': s.user.name if s.user else "Unknown",
+            'duration': s.duration,
+            'started_at': s.started_at.isoformat() if s.started_at else None,
+            'ended_at': s.ended_at.isoformat() if s.ended_at else None,
+            'feature_used': s.feature_used or "Communication Suite",
+            'date': s.created_at.strftime('%Y-%m-%d') if s.created_at else None
+        } for s in sessions])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -94,16 +96,51 @@ def get_chats():
 @jwt_required()
 def get_reports():
     try:
-        reports = Report.query.all()
+        reports = Report.query.order_by(Report.created_at.desc()).all()
         return jsonify([{
             'id': r.id,
             'user_id': r.user_id,
             'name': r.name,
-            'type': r.type,
+            'email': r.email,
+            'type': r.report_type,
             'message': r.message,
+            'status': r.status,
             'created_at': r.created_at.isoformat() if r.created_at else None
         } for r in reports])
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/api/admin/reports/<int:report_id>', methods=['PUT'])
+@jwt_required()
+def update_report(report_id):
+    try:
+        data = request.get_json()
+        report = Report.query.get(report_id)
+        if not report:
+            return jsonify({'error': 'Report not found'}), 404
+        
+        if 'status' in data:
+            report.status = data['status']
+        
+        db.session.commit()
+        return jsonify({'success': True, 'status': report.status})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/api/admin/reports/<int:report_id>', methods=['DELETE'])
+@jwt_required()
+def delete_report(report_id):
+    try:
+        report = Report.query.get(report_id)
+        if not report:
+            return jsonify({'error': 'Report not found'}), 404
+        
+        db.session.delete(report)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @admin_bp.route('/api/admin/tables', methods=['GET'])

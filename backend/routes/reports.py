@@ -14,6 +14,9 @@ def submit_report():
 
         type_   = data.get('type', '').strip()
         message = data.get('message', '').strip()
+        name    = (data.get('name') or 'Anonymous').strip()[:100]
+        email   = (data.get('email') or '').strip()[:120]
+        user_id = data.get('user_id')
 
         if not type_ or not message:
             return jsonify({'error': 'Type and message are required'}), 400
@@ -22,9 +25,11 @@ def submit_report():
             return jsonify({'error': 'Input exceeds maximum allowed length'}), 400
 
         report = Report(
-            name        = (data.get('name') or 'Anonymous').strip()[:100],
-            report_type = type_,    # ← fixed: was type= now report_type=
-            message     = message
+            name        = name,
+            email       = email,
+            report_type = type_,
+            message     = message,
+            user_id     = user_id
         )
 
         db.session.add(report)
@@ -46,8 +51,10 @@ def get_reports():
             {
                 'id':      r.id,
                 'name':    r.name,
-                'type':    r.report_type,    # ← fixed: was r.type now r.report_type
+                'email':   r.email,
+                'type':    r.report_type,
                 'message': r.message,
+                'status':  r.status,
                 'time':    r.created_at.isoformat() if r.created_at else None
             }
             for r in rows

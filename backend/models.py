@@ -46,6 +46,7 @@ class CallSession(db.Model):
     contact_name = db.Column(db.String(120), nullable=True)
     session_id   = db.Column(db.String(80), unique=True, nullable=False, default=lambda: uuid.uuid4().hex)
     language     = db.Column(db.String(40), nullable=True)
+    feature_used = db.Column(db.String(50), nullable=True) # Added feature_used
     started_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     ended_at     = db.Column(db.DateTime, nullable=True)
     duration     = db.Column(db.Integer, default=0)
@@ -79,15 +80,19 @@ class Report(db.Model):
     id          = db.Column(db.Integer, primary_key=True)
     user_id     = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     name        = db.Column(db.String(80))
-    report_type = db.Column('type', db.String(50))   # ← fixed: renamed to report_type, DB column stays 'type'
+    email       = db.Column(db.String(120)) # Added email
+    report_type = db.Column('type', db.String(50))
     message     = db.Column(db.Text, nullable=False)
+    status      = db.Column(db.String(20), default='Pending') # Added status
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def __init__(self, name=None, report_type=None, message=None, user_id=None):
+    def __init__(self, name=None, email=None, report_type=None, message=None, user_id=None, status='Pending'):
         self.name = name
+        self.email = email
         self.report_type = report_type
         self.message = message
         self.user_id = user_id
+        self.status = status
 
     def __repr__(self):
         return f'<Report {self.id} - {self.report_type}>'

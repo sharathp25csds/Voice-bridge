@@ -1,6 +1,6 @@
 // VoiceBridge Admin Portal Script
 
-const API = 'https://voice-bridge-one.vercel.app/index.html';
+const API = 'https://voicebridge-api.onrender.com';
 
 
 const getAdminToken = () => localStorage.getItem('admin_token');

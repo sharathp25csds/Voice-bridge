@@ -6,7 +6,7 @@
 // ==========================================
 // BACKEND CONNECTION
 // ==========================================
-const API = 'https://voice-bridge-1-esy4.onrender.com';
+const API = 'http://127.0.0.1:5000'; // ← This only works on YOUR computer
 
 const getToken = () => localStorage.getItem('vb_token');
 const getUser  = () => JSON.parse(localStorage.getItem('vb_user') || '{}');

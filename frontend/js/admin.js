@@ -1,6 +1,6 @@
 // VoiceBridge Admin Portal Script
 
-const API = 'https://voice-bridge-1-esy4.onrender.com';
+const API = 'http://127.0.0.1:5000'; // ← This only works on YOUR computer
 
 
 const getAdminToken = () => localStorage.getItem('admin_token');

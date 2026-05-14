@@ -10,3 +10,4 @@ pydub
 numpy
 webrtcvad
 gunicorn
+psycopg2-binary

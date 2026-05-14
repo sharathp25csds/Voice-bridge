@@ -16,9 +16,11 @@ SYSTEM_PROMPT = (
     'and concise.'
 )
 
-@chat_bp.route('/api/chat', methods=['POST'])
+@chat_bp.route('/chat', methods=['POST', 'OPTIONS'])
 @jwt_required()
 def chat():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     user_id = get_jwt_identity()
     data = request.get_json(silent=True) or {}
     message = data.get('message', '').strip()
@@ -94,9 +96,11 @@ def chat():
         return jsonify({'error': f'AI service error: {str(exc)}'}), 502
 
 
-@chat_bp.route('/api/chat/history', methods=['GET'])
+@chat_bp.route('/chat/history', methods=['GET', 'OPTIONS'])
 @jwt_required()
 def get_history():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     user_id = get_jwt_identity()
     rows = (
         ChatHistory.query

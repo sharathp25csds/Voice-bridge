@@ -6,8 +6,10 @@ from models import db, User
 auth_bp = Blueprint('auth', __name__)
 bcrypt  = Bcrypt()
 
-@auth_bp.route('/api/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     data     = request.get_json()
     name     = data.get('name', '').strip()
     email    = data.get('email', '').strip().lower()
@@ -28,8 +30,10 @@ def register():
     return jsonify({'token': token, 'name': user.name, 'email': user.email}), 201
 
 
-@auth_bp.route('/api/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     data     = request.get_json()
     email    = data.get('email', '').strip().lower()
     password = data.get('password', '')
@@ -42,7 +46,7 @@ def login():
     return jsonify({'token': token, 'name': user.name, 'email': user.email}), 200
 
 
-@auth_bp.route('/api/me', methods=['GET'])
+@auth_bp.route('/me', methods=['GET'])
 def me():
     from flask_jwt_extended import jwt_required, get_jwt_identity
     token = request.headers.get('Authorization', '').replace('Bearer ', '')

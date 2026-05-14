@@ -12,8 +12,10 @@ admin_bp = Blueprint('admin', __name__)
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
 
-@admin_bp.route('/api/admin/login', methods=['POST'])
+@admin_bp.route('/admin/login', methods=['POST', 'OPTIONS'])
 def admin_login():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -27,7 +29,7 @@ def admin_login():
     token = create_access_token(identity='admin')
     return jsonify({'token': token})
 
-@admin_bp.route('/api/admin/stats', methods=['GET'])
+@admin_bp.route('/admin/stats', methods=['GET'])
 @jwt_required()
 def get_stats():
     try:
@@ -46,7 +48,7 @@ def get_stats():
         print(f"Stats Error: {str(e)}")
         return jsonify({'error': f"Database error: {str(e)}"}), 500
 
-@admin_bp.route('/api/admin/users', methods=['GET'])
+@admin_bp.route('/admin/users', methods=['GET'])
 @jwt_required()
 def get_users():
     try:
@@ -61,7 +63,7 @@ def get_users():
         print(f"Users Fetch Error: {str(e)}")
         return jsonify({'error': f"Failed to fetch users: {str(e)}"}), 500
 
-@admin_bp.route('/api/admin/calls', methods=['GET'])
+@admin_bp.route('/admin/calls', methods=['GET'])
 @jwt_required()
 def get_calls():
     try:
@@ -80,7 +82,7 @@ def get_calls():
         print(f"Calls Fetch Error: {str(e)}")
         return jsonify({'error': f"Failed to fetch transcripts: {str(e)}"}), 500
 
-@admin_bp.route('/api/admin/chats', methods=['GET'])
+@admin_bp.route('/admin/chats', methods=['GET'])
 @jwt_required()
 def get_chats():
     try:
@@ -96,7 +98,7 @@ def get_chats():
         print(f"Chats Fetch Error: {str(e)}")
         return jsonify({'error': f"Failed to fetch chats: {str(e)}"}), 500
 
-@admin_bp.route('/api/admin/reports', methods=['GET'])
+@admin_bp.route('/admin/reports', methods=['GET'])
 @jwt_required()
 def get_reports():
     try:
@@ -115,7 +117,7 @@ def get_reports():
         print(f"Reports Fetch Error: {str(e)}")
         return jsonify({'error': f"Failed to fetch reports: {str(e)}"}), 500
 
-@admin_bp.route('/api/admin/reports/<int:report_id>', methods=['PUT'])
+@admin_bp.route('/admin/reports/<int:report_id>', methods=['PUT'])
 @jwt_required()
 def update_report(report_id):
     try:
@@ -133,7 +135,7 @@ def update_report(report_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/reports/<int:report_id>', methods=['DELETE'])
+@admin_bp.route('/admin/reports/<int:report_id>', methods=['DELETE'])
 @jwt_required()
 def delete_report(report_id):
     try:
@@ -161,7 +163,7 @@ def get_db_path():
             return p
     return 'instance/voicebridge.db' # Default
 
-@admin_bp.route('/api/admin/tables', methods=['GET'])
+@admin_bp.route('/admin/tables', methods=['GET'])
 @jwt_required()
 def get_tables():
     try:
@@ -174,7 +176,7 @@ def get_tables():
     except Exception as e:
         return jsonify({'error': f"DB Inspector Error: {str(e)}"}), 500
 
-@admin_bp.route('/api/admin/table/<table_name>', methods=['GET'])
+@admin_bp.route('/admin/table/<table_name>', methods=['GET'])
 @jwt_required()
 def get_table_data(table_name):
     try:
@@ -199,7 +201,7 @@ def get_table_data(table_name):
     except Exception as e:
         return jsonify({'error': f"Table Data Error: {str(e)}"}), 500
 
-@admin_bp.route('/api/admin/table/<table_name>', methods=['POST'])
+@admin_bp.route('/admin/table/<table_name>', methods=['POST'])
 @jwt_required()
 def update_table_data(table_name):
     try:

@@ -37,11 +37,11 @@ db.init_app(app)
 bcrypt.init_app(app)
 JWTManager(app)
 
-app.register_blueprint(auth_bp)
-app.register_blueprint(chat_bp)
-app.register_blueprint(calls_bp)
-app.register_blueprint(reports_bp)
-app.register_blueprint(admin_bp)
+app.register_blueprint(auth_bp,    url_prefix='/api')
+app.register_blueprint(chat_bp,    url_prefix='/api')
+app.register_blueprint(calls_bp,   url_prefix='/api')
+app.register_blueprint(reports_bp, url_prefix='/api')
+app.register_blueprint(admin_bp,   url_prefix='/api')
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -72,8 +72,10 @@ def clean_transcript(text: str) -> str:
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
-@app.route('/api/transcribe', methods=['POST'])
+@app.route('/api/transcribe', methods=['POST', 'OPTIONS'])
 def transcribe_audio():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file uploaded'}), 400
 

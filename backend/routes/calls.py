@@ -20,9 +20,11 @@ def generate_session_id():
     return uuid.uuid4().hex
 
 
-@calls_bp.route('/api/calls', methods=['POST'])
+@calls_bp.route('/calls', methods=['POST', 'OPTIONS'])
 @jwt_required()
 def save_call():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     user_id = get_jwt_identity()
     data    = request.get_json() or {}
 
@@ -64,7 +66,7 @@ def save_call():
     return jsonify({'saved': True, 'session_id': session_id}), 201
 
 
-@calls_bp.route('/api/call-sessions', methods=['GET'])
+@calls_bp.route('/call-sessions', methods=['GET'])
 @jwt_required()
 def list_call_sessions():
     user_id = get_jwt_identity()
@@ -110,7 +112,7 @@ def list_call_sessions():
     })
 
 
-@calls_bp.route('/api/call-sessions/<int:session_id>', methods=['GET'])
+@calls_bp.route('/call-sessions/<int:session_id>', methods=['GET'])
 @jwt_required()
 def get_call_session(session_id):
     user_id = get_jwt_identity()
@@ -140,7 +142,7 @@ def get_call_session(session_id):
     })
 
 
-@calls_bp.route('/api/call-sessions/<int:session_id>', methods=['DELETE'])
+@calls_bp.route('/call-sessions/<int:session_id>', methods=['DELETE'])
 @jwt_required()
 def delete_call_session(session_id):
     user_id = get_jwt_identity()
@@ -153,7 +155,7 @@ def delete_call_session(session_id):
     return jsonify({'deleted': True}), 200
 
 
-@calls_bp.route('/api/calls', methods=['GET'])
+@calls_bp.route('/calls', methods=['GET'])
 @jwt_required()
 def get_calls():
     user_id = get_jwt_identity()

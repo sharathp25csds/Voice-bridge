@@ -5,8 +5,10 @@ from models import db, Report
 reports_bp = Blueprint('reports', __name__)
 
 
-@reports_bp.route('/api/reports', methods=['POST'])
+@reports_bp.route('/reports', methods=['POST', 'OPTIONS'])
 def submit_report():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'OK'}), 200
     try:
         data = request.get_json(silent=True)
         if not data:
@@ -41,7 +43,7 @@ def submit_report():
         return jsonify({'error': 'Failed to save report', 'details': str(e)}), 500
 
 
-@reports_bp.route('/api/reports', methods=['GET'])
+@reports_bp.route('/reports', methods=['GET'])
 @jwt_required()
 def get_reports():
     try:

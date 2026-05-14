@@ -33,6 +33,12 @@ class CallLog(db.Model):
     duration   = db.Column(db.Integer, default=0)
     transcript = db.Column(db.Text, default='')
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __init__(self, user_id, peer_id=None, duration=0, transcript=''):
+        self.user_id = user_id
+        self.peer_id = peer_id
+        self.duration = duration
+        self.transcript = transcript
 
     def __repr__(self):
         return f'<CallLog {self.id} - User {self.user_id}>'
@@ -52,6 +58,16 @@ class CallSession(db.Model):
     duration     = db.Column(db.Integer, default=0)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def __init__(self, user_id, contact_name=None, session_id=None, language='en-IN', feature_used=None, started_at=None, ended_at=None, duration=0):
+        self.user_id = user_id
+        self.contact_name = contact_name
+        self.session_id = session_id or uuid.uuid4().hex
+        self.language = language
+        self.feature_used = feature_used
+        self.started_at = started_at or datetime.utcnow()
+        self.ended_at = ended_at
+        self.duration = duration
+
     # Relationships
     captions     = db.relationship('CallCaption', backref='session', lazy=True, cascade='all, delete-orphan')
 
@@ -69,6 +85,13 @@ class CallCaption(db.Model):
     timestamp       = db.Column(db.DateTime, nullable=True)
     sequence_number = db.Column(db.Integer, nullable=False, default=1)
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, call_session_id, speaker=None, caption_text='', timestamp=None, sequence_number=1):
+        self.call_session_id = call_session_id
+        self.speaker = speaker
+        self.caption_text = caption_text
+        self.timestamp = timestamp or datetime.utcnow()
+        self.sequence_number = sequence_number
 
     def __repr__(self):
         return f'<CallCaption {self.id} - Session {self.call_session_id}>'

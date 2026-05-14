@@ -6,7 +6,7 @@
 // ==========================================
 // BACKEND CONNECTION
 // ==========================================
-const API = '/api'; // ← This only works on YOUR computer
+const API = '/api';
 
 const getToken = () => localStorage.getItem('vb_token');
 const getUser  = () => JSON.parse(localStorage.getItem('vb_user') || '{}');
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const url  = authMode === 'login' ? `${API}/api/login` : `${API}/api/register`;
+        const url  = authMode === 'login' ? `${API}/login` : `${API}/register`;
         const body = authMode === 'login'
             ? { email, password }
             : { name, email, password };
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('language', selectedLang);
 
                 try {
-                    const response = await fetch(`${API}/api/transcribe`, {
+                    const response = await fetch(`${API}/transcribe`, {
                         method: 'POST',
                         body: formData
                     });
@@ -741,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const token = getToken();
             console.log('Chat: Sending message to API...', { query, hasToken: !!token });
             
-            const res  = await fetch(`${API}/api/chat`, {
+            const res  = await fetch(`${API}/chat`, {
                 method:  'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -790,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!message) { showToast('Please enter a message'); return; }
 
         try {
-            const res = await fetch(`${API}/api/reports`, {
+            const res = await fetch(`${API}/reports`, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({ name, email, type, message, user_id: userId })
@@ -1131,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     captions:     callCaptions   // [{ speaker, caption_text, timestamp }]
                 };
 
-                const res = await fetch(`${API}/api/call-sessions`, {
+                const res = await fetch(`${API}/call-sessions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1177,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isLoggedIn()) return;
 
         try {
-            let url = `${API}/api/call-sessions?page=${page}&limit=${historyLimit}`;
+            let url = `${API}/call-sessions?page=${page}&limit=${historyLimit}`;
             if (search) url += `&search=${encodeURIComponent(search)}`;
 
             const res  = await fetch(url, {
@@ -1253,7 +1253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isLoggedIn()) return;
 
         try {
-            const res     = await fetch(`${API}/api/call-sessions/${sessionId}`, {
+            const res     = await fetch(`${API}/call-sessions/${sessionId}`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + (getToken() || '')
@@ -1321,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('Are you sure? This will permanently delete this call history.')) return;
 
         try {
-            const res = await fetch(`${API}/api/call-sessions/${activeHistorySessionId}`, {
+            const res = await fetch(`${API}/call-sessions/${activeHistorySessionId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

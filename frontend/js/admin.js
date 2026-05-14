@@ -1,6 +1,6 @@
 // VoiceBridge Admin Portal Script
 
-const API = '/api';// ← This only works on YOUR computer
+const API = '/api';
 
 
 const getAdminToken = () => localStorage.getItem('admin_token');
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const verifyAdminToken = async () => {
         if (!isAdminLoggedIn()) return false;
         try {
-            const res = await fetch(`${API}/api/admin/stats`, {
+            const res = await fetch(`${API}/admin/stats`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
             return res.ok;
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         adminLoginBtn.disabled = true;
 
         try {
-            const res = await fetch(`${API}/api/admin/login`, {
+            const res = await fetch(`${API}/admin/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadDashboardData = async () => {
         try {
             console.log('Fetching dashboard stats...');
-            const res = await fetch(`${API}/api/admin/stats`, {
+            const res = await fetch(`${API}/admin/stats`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
             
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             console.log(`Fetching ${endpoint} data...`);
-            const res = await fetch(`${API}/api/admin/${endpoint}`, {
+            const res = await fetch(`${API}/admin/${endpoint}`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
             
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             console.log('Fetching reports...');
-            const res = await fetch(`${API}/api/admin/reports`, {
+            const res = await fetch(`${API}/admin/reports`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
             
@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Handle Report Status Updates ───────────────────────────────────────────
     const handleReportAction = async (reportId, newStatus) => {
         try {
-            const res = await fetch(`${API}/api/admin/reports/${reportId}`, {
+            const res = await fetch(`${API}/admin/reports/${reportId}`, {
                 method: 'PUT',
                 headers: { 
                     'Authorization': `Bearer ${getAdminToken()}`,
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm(`Are you sure you want to delete report #${reportId}?`)) return;
 
         try {
-            const res = await fetch(`${API}/api/admin/reports/${reportId}`, {
+            const res = await fetch(`${API}/admin/reports/${reportId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
@@ -576,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isAdminLoggedIn() || !tableSelect) return;
 
         try {
-            const res = await fetch(`${API}/api/admin/tables`, {
+            const res = await fetch(`${API}/admin/tables`, {
                 headers: { 'Authorization': `Bearer ${getAdminToken()}` }
             });
             const data = await res.json();
@@ -618,7 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (thead) thead.innerHTML = '';
 
             try {
-                const res = await fetch(`${API}/api/admin/table/${tableName}`, {
+                const res = await fetch(`${API}/admin/table/${tableName}`, {
                     headers: { 'Authorization': `Bearer ${getAdminToken()}` }
                 });
                 const data = await res.json();

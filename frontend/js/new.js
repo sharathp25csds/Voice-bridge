@@ -6,7 +6,7 @@
 // ==========================================
 // BACKEND CONNECTION
 // ==========================================
-const API = 'https://voicebridge-api.onrender.com';
+const API = 'https://voicebridge-backend.onrender.com';
 
 const getToken = () => localStorage.getItem('vb_token');
 const getUser  = () => JSON.parse(localStorage.getItem('vb_user') || '{}');
